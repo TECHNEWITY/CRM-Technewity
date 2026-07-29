@@ -1,0 +1,32 @@
+services:
+- type: web
+  name: technewity-be
+  runtime: node
+  plan: free
+  envVars:
+  - key: REDIS_HOST
+    sync: false
+  - key: NEXT_PUBLIC_FE_GATEWAY
+    value: https://crm.technewity.com/
+  - key: NEXT_PUBLIC_BE_GATEWAY
+    sync: false
+  - key: MONGODB_URL
+    sync: false
+  - key: NEXT_PUBLIC_APP_NAME
+    value: Technewity Labs
+  - key: JWT_VERIFY_USER_LINK_TOKEN_EXPIRED
+    value: 1h
+  - key: JWT_TOKEN_EXPIRED
+    value: 30m
+  - key: JWT_SECRET_KEY
+    value: 12GUY3N76U21d4IJ
+  - key: JWT_REFRESH_KEY
+    value: 7us9s88o121ieeuo
+  - key: JWT_REFRESH_EXPIRED
+    value: 4h
+  region: singapore
+  buildCommand: yarn install; yarn generate2; yarn build:be
+  startCommand: yarn prod:be
+  healthCheckPath: /
+version: "1"
+

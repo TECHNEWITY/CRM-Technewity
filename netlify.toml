@@ -1,0 +1,16 @@
+[build]
+  command = "npm run generate2 && npm run build:fe"
+  publish = "./dist/apps/frontend/.next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[template.environment]
+  NEXT_PUBLIC_APP_NAME = "NEXT_PUBLIC_APP_NAME"
+  NEXT_PUBLIC_BE_GATEWAY = "NEXT_PUBLIC_BE_GATEWAY"
+
+[context.production]
+  environment = { }
+
+[context.deploy-preview]
+  environment = { }

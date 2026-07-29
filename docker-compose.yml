@@ -1,0 +1,57 @@
+services:
+  backend:
+    container_name: namviek-backend
+    build:
+      context: .
+      dockerfile: ./docker/backend/Dockerfile
+      # dockerfile: ./docker/Dockerfile
+      args:
+        - ENV_FILE=.env.local
+    image: namviek
+    env_file:
+      - .env.local
+    environment:
+      - REDIS_HOST=redis:6379
+      - MONGODB_URL=mongodb://mongodb:27017/namviek?replicaSet=rs0&authSource=admin&directConnection=true
+      - AWS_MINIO_ENDPOINT=http://localhost:9000
+    ports:
+      - '3333:3000'
+    # command: /bin/sh -c "./docker/be-entrypoint.sh && yarn backend"
+    command: /bin/sh -c "node ./main.js"
+    healthcheck:
+      test: curl --fail http://localhost:3333 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - namviek-network
+
+  frontend:
+    container_name: namviek-frontend
+    build:
+      context: .
+      dockerfile: ./docker/frontend/Dockerfile
+      # dockerfile: ./docker/Dockerfile
+    env_file:
+      - .env.local
+    ports:
+      - '3005:3000'
+    # command: /bin/sh -c "./docker/fe-entrypoint.sh && yarn prod:fe"
+    command: /bin/sh -c 'HOSTNAME="0.0.0.0" node ./apps/frontend/server.js'
+    depends_on:
+      - backend
+    networks:
+      - namviek-network
+
+volumes:
+  mongodb-data:
+  minio-data:
+  mongodb-config:
+
+networks:
+  namviek-network:
+    driver: bridge

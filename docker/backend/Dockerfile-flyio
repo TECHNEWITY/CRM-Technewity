@@ -1,0 +1,64 @@
+# ----------------------- base -----------------
+FROM node:22-alpine AS base
+
+USER root
+# Update image and add dependencies with correct package names
+RUN apk update && apk upgrade && \
+    apk add --no-cache \
+    g++ \
+    make \
+    python3 \
+    openssl \
+    openssl-dev
+
+COPY . /app
+WORKDIR /app
+
+# Add NX
+RUN yarn global add nx@latest 
+
+# ----------------------- dependencies -----------------
+FROM base AS deps
+
+RUN npm install --only=development
+
+# ------------------------ builder ---------------
+FROM base AS builder
+
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+
+RUN yarn generate2
+RUN yarn build:be
+
+# ------------------------ runner ---------------------
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+# Install dependencies with correct package names
+RUN apk update && apk upgrade && \
+    apk add --no-cache \
+    openssl \
+    openssl-dev \
+    libc6-compat
+
+COPY --from=builder /app/dist/apps/backend ./
+COPY ./packages/database/src/prisma/schema.prisma .
+COPY ./yarn.lock .
+
+# Install production dependencies
+RUN yarn install --production --network-timeout 1000000
+RUN npx prisma generate
+
+# Copy Prisma engine files
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+
+# Set both HOST and PORT explicitly
+ENV HOST=0.0.0.0
+ENV PORT=3000
+ENV NODE_ENV=production
+
+CMD node main.js
