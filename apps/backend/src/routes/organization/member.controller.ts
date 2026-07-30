@@ -61,10 +61,43 @@ export class OrganizationMemberController extends BaseController {
       email: string
     }
 
+    const feGateway = process.env.NEXT_PUBLIC_FE_GATEWAY || 'https://crm.technewity.com/'
     const foundUser = await mdUserFindEmail(email)
+
     if (!foundUser) {
-      console.log(1)
-      throw new BadRequestException('EMAIL_NOT_FOUND')
+      // User has not registered an account yet - dispatch invitation email
+      try {
+        const signupLink = `${feGateway}sign-up`
+        sendEmail({
+          emails: [email],
+          subject: `[Technewity Labs]: You are invited to join an Organization`,
+          html: `
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f8f8; border-radius: 5px;">
+        <tr>
+            <td style="padding: 20px;">
+                <h1 style="color: #4a4a4a; text-align: center;">Organization Invitation</h1>
+                <p style="font-size: 16px;">Hello,</p>
+                <p style="font-size: 16px;">You have been invited to join a team workspace on Technewity Labs.</p>
+                <p style="font-size: 16px;">Click the button below to create your account and access the workspace:</p>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td align="center" style="padding: 20px 0;">
+                            <a href="${signupLink}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Accept Invitation & Sign Up</a>
+                        </td>
+                    </tr>
+                </table>
+                <p style="font-size: 16px;">Best regards,<br>Technewity Labs Team</p>
+            </td>
+        </tr>
+    </table>
+</body>`
+        })
+      } catch (emailErr) {
+        console.warn('Failed to send org invitation email:', emailErr)
+      }
+
+      return { id: 'pending', email, name: email, status: 'INVITED' }
     }
 
     const isAlreadyExist = await mdOrgMemberExist({
@@ -80,8 +113,6 @@ export class OrganizationMemberController extends BaseController {
       throw new BadRequestException('MAX_ORGANIZATION_MEMBER')
     }
 
-    console.log('founded', foundUser)
-
     await mdOrgMemberAdd({
       organizationId: orgId,
       uid: foundUser.id,
@@ -94,7 +125,6 @@ export class OrganizationMemberController extends BaseController {
     })
 
     try {
-      const feGateway = process.env.NEXT_PUBLIC_FE_GATEWAY || 'https://crm.technewity.com/'
       sendEmail({
         emails: [email],
         subject: `[Technewity Labs]: You have been added to an Organization`,
