@@ -89,14 +89,19 @@ router.get('/join', async (req: AuthRequest, res) => {
 
   if (!apiKey || !apiSecret || !wsUrl) {
     const fallbackToken = generateToken({ room, identity: username, isFallback: true })
-    return res.json({ token: fallbackToken })
+    return res.json({
+      data: { token: fallbackToken },
+      token: fallbackToken
+    })
   }
 
   const at = new AccessToken(apiKey, apiSecret, { identity: username })
   at.addGrant({ room, roomJoin: true, canPublish: true, canSubscribe: true })
 
+  const jwtToken = at.toJwt()
   res.json({
-    token: at.toJwt()
+    data: { token: jwtToken },
+    token: jwtToken
   })
 })
 
@@ -116,14 +121,19 @@ router.get('/get-participants', (req: AuthRequest, res) => {
 
   if (!apiKey || !apiSecret || !wsUrl) {
     const fallbackToken = generateToken({ room, identity: username, isFallback: true })
-    return res.json({ token: fallbackToken })
+    return res.json({
+      data: { token: fallbackToken },
+      token: fallbackToken
+    })
   }
 
   const at = new AccessToken(apiKey, apiSecret, { identity: username })
   at.addGrant({ room, roomJoin: true, canPublish: true, canSubscribe: true })
 
+  const jwtToken = at.toJwt()
   res.json({
-    token: at.toJwt()
+    data: { token: jwtToken },
+    token: jwtToken
   })
 })
 

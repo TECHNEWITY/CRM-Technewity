@@ -31,8 +31,11 @@ export default function MeetingContainer() {
 
   useEffect(() => {
     if (user && user.name && roomId) {
-      meetingGetParticipant({ room: roomId, username: user.name }).then(res => {
-        setToken(res.data.token)
+      meetingGetParticipant({ room: roomId as string, username: user.name }).then(res => {
+        const fetchedToken = res?.data?.token || (res as any)?.token || (typeof res?.data === 'string' ? res?.data : '')
+        if (fetchedToken && typeof fetchedToken === 'string') {
+          setToken(fetchedToken)
+        }
       })
     }
   }, [user?.id, roomId])

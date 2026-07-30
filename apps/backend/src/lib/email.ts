@@ -29,29 +29,20 @@ const _cannotSendEmail = () => {
 }
 
 
-export const sendEmail = ({ emails, html, subject }: IEmailFields) => {
+export const sendEmail = async ({ emails, html, subject }: IEmailFields) => {
   if (_cannotSendEmail()) return
-  return resend.emails.send({
-    from: `${resendFromEmailName} <${resendFromEmail}>`,
-    to: emails,
-    subject,
-    html
-    // attachments: [
-    //   {
-    //     filename: 'invoice.pdf',
-    //     content: invoiceBuffer
-    //   }
-    // ],
-    // headers: {
-    //   'X-Entity-Ref-ID': '123456789'
-    // },
-    // tags: [
-    //   {
-    //     name: 'category',
-    //     value: 'confirm_email'
-    //   }
-    // ]
-  })
+  try {
+    const response = await resend.emails.send({
+      from: `${resendFromEmailName} <${resendFromEmail}>`,
+      to: emails,
+      subject,
+      html
+    })
+    console.log('[Resend Email Success] Dispatched to:', emails, response)
+    return response
+  } catch (error) {
+    console.error('[Resend Email Error] Failed to send email:', error)
+  }
 }
 
 export const sendVerifyEmail = ({
