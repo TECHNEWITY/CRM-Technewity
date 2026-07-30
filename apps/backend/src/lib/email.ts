@@ -8,8 +8,8 @@ try {
   console.warn("Resend token is missing")
 }
 
-const resendFromEmail = `${process.env.RESEND_EMAIL_DOMAIN || 'noreply@resend.dev'}` // noreply@domain.com
-const resendFromEmailName = `${process.env.RESEND_EMAIL_NAME || 'Noreply'}`
+const resendFromEmail = process.env.RESEND_EMAIL_FROM || 'onboarding@resend.dev'
+const resendFromEmailName = `${process.env.RESEND_EMAIL_NAME || 'Technewity Labs'}`
 const appName = `${process.env.NEXT_PUBLIC_APP_NAME || 'Technewity Labs'}`
 
 interface IEmailFields {

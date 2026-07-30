@@ -21,6 +21,7 @@ import InternalServerException from '../../exceptions/InternalServerException'
 import { InvitationStatus, OrganizationRole } from '@prisma/client'
 import BadRequestException from '../../exceptions/BadRequestException'
 import OrgMemberRemoveService from '../../services/orgMember/remove.service'
+import { sendEmail } from '../../lib/email'
 
 const MAX_ORGANIZATION_MEMBER = 25
 
@@ -91,6 +92,36 @@ export class OrganizationMemberController extends BaseController {
       updatedAt: null,
       updatedBy: null
     })
+
+    try {
+      const feGateway = process.env.NEXT_PUBLIC_FE_GATEWAY || 'https://crm.technewity.com/'
+      sendEmail({
+        emails: [email],
+        subject: `[Technewity Labs]: You have been added to an Organization`,
+        html: `
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f8f8; border-radius: 5px;">
+        <tr>
+            <td style="padding: 20px;">
+                <h1 style="color: #4a4a4a; text-align: center;">Organization Invitation</h1>
+                <p style="font-size: 16px;">Hello <strong>${foundUser.name}</strong>,</p>
+                <p style="font-size: 16px;">You have been invited and added to a workspace on Technewity Labs.</p>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td align="center" style="padding: 20px 0;">
+                            <a href="${feGateway}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Open Workspace</a>
+                        </td>
+                    </tr>
+                </table>
+                <p style="font-size: 16px;">Best regards,<br>Technewity Labs Team</p>
+            </td>
+        </tr>
+    </table>
+</body>`
+      })
+    } catch (emailErr) {
+      console.warn('Failed to send org invite email:', emailErr)
+    }
 
     return foundUser
   }
