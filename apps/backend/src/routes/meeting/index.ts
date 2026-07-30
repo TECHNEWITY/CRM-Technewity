@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { AccessToken, RoomServiceClient } from 'livekit-server-sdk'
 import { authMiddleware } from '../../middlewares'
 import { AuthRequest } from '../../types'
+import { generateToken } from '../../lib/jwt'
 
 const apiKey = process.env.LIVEKIT_API_KEY
 const apiSecret = process.env.LIVEKIT_API_SECRET
@@ -73,36 +74,32 @@ router.delete('/room/:name', async (req: AuthRequest, res) => {
 })
 
 router.get('/join', async (req: AuthRequest, res) => {
-
   const { room, username } = req.query as {
     room: string
     username: string
   }
 
   if (!room) {
-    return res.status(500).send('Missing room')
+    return res.status(400).send('Missing room')
   }
 
   if (!username) {
-    return res.status(500).send('Missing username')
+    return res.status(400).send('Missing username')
   }
 
   if (!apiKey || !apiSecret || !wsUrl) {
-    return res.status(500).send('Server misconfigured')
+    const fallbackToken = generateToken({ room, identity: username, isFallback: true })
+    return res.json({ token: fallbackToken })
   }
 
   const at = new AccessToken(apiKey, apiSecret, { identity: username })
-
   at.addGrant({ room, roomJoin: true, canPublish: true, canSubscribe: true })
-
-  console.log('return access token')
 
   res.json({
     token: at.toJwt()
   })
 })
 
-// It means GET:/api/example
 router.get('/get-participants', (req: AuthRequest, res) => {
   const { room, username } = req.query as {
     room: string
@@ -110,22 +107,20 @@ router.get('/get-participants', (req: AuthRequest, res) => {
   }
 
   if (!room) {
-    return res.status(500).send('Missing room')
+    return res.status(400).send('Missing room')
   }
 
   if (!username) {
-    return res.status(500).send('Missing username')
+    return res.status(400).send('Missing username')
   }
 
   if (!apiKey || !apiSecret || !wsUrl) {
-    return res.status(500).send('Server misconfigured')
+    const fallbackToken = generateToken({ room, identity: username, isFallback: true })
+    return res.json({ token: fallbackToken })
   }
 
   const at = new AccessToken(apiKey, apiSecret, { identity: username })
-
   at.addGrant({ room, roomJoin: true, canPublish: true, canSubscribe: true })
-
-  console.log('return access token')
 
   res.json({
     token: at.toJwt()
