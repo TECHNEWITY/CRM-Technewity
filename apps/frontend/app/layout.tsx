@@ -23,7 +23,12 @@ const PushNotification = dynamic(
 
 export const metadata = {
   title: process.env.NEXT_PUBLIC_APP_NAME || 'Technewity Labs',
-  description: 'Technewity Labs - Enterprise Project & Organization Management System'
+  description: 'Technewity Labs - Enterprise Project & Organization Management System',
+  icons: {
+    icon: '/logo71x71.png',
+    shortcut: '/logo71x71.png',
+    apple: '/logo71x71.png'
+  }
 }
 
 export default function RootLayout({
@@ -36,7 +41,10 @@ export default function RootLayout({
       <GoalieProvider>
         <html lang="en">
           <head>
-            <title>{process.env.NEXT_PUBLIC_APP_NAME}</title>
+            <title>{process.env.NEXT_PUBLIC_APP_NAME || 'Technewity Labs'}</title>
+            <link rel="icon" href="/logo71x71.png" type="image/png" sizes="any" />
+            <link rel="shortcut icon" href="/logo71x71.png" type="image/png" />
+            <link rel="apple-touch-icon" href="/logo71x71.png" />
           </head>
           <body className={inter.className}>
             <PostHogPageView />
