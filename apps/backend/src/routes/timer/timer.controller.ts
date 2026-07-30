@@ -95,7 +95,7 @@ export class TimerController extends BaseController {
     const timer = await this.timerRepo.findRunningTimerByUserId(userId);
     
     if (!timer) {
-      throw new Error('No running timer found');
+      return null;
     }
 
     return timer;
