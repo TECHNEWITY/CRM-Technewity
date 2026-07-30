@@ -83,6 +83,14 @@ export const mdProjectUpdate = async (data: Partial<Project>) => {
   })
 }
 
+export const mdProjectDelete = async (projectId: string) => {
+  return projectModel.delete({
+    where: {
+      id: projectId
+    }
+  })
+}
+
 export const mdProjectGetAllByIds = async (
   ids: string[],
   cond: {

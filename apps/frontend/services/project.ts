@@ -46,9 +46,12 @@ export const projectUnpin = (projectId: string) => {
 
 export const projectService = {
   archive: (projectId: string, value: boolean) => {
-    return httpPost('/api/project/archive', {
+    return httpPut('/api/project/archive', {
       projectId,
-      archive: value
+      isArchived: value
     })
+  },
+  delete: (projectId: string) => {
+    return httpDel(`/api/project/${projectId}`)
   }
 }

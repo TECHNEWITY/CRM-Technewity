@@ -8,6 +8,8 @@ import {
   mdMemberAdd,
   mdMemberGetProject,
   mdProjectAdd,
+  mdProjectArchive,
+  mdProjectDelete,
   mdProjectGetAllByIds,
   mdProjectUpdate,
   mdProjectView,
@@ -431,6 +433,59 @@ router.put('/project', async (req: AuthRequest, res) => {
     status: 200,
     data: result
   })
+})
+
+router.put('/project/archive', async (req: AuthRequest, res) => {
+  const { projectId, isArchived } = req.body as {
+    projectId: string
+    isArchived: boolean
+  }
+  const { id: userId } = req.authen
+
+  if (!projectId) {
+    return res.status(400).json({ error: 'Missing projectId' })
+  }
+
+  try {
+    const result = await mdProjectArchive({
+      projectId,
+      isArchived: !!isArchived,
+      updatedAt: new Date(),
+      updatedBy: userId
+    })
+
+    delCache([CKEY.USER_PROJECT, userId])
+
+    res.json({
+      status: 200,
+      data: result
+    })
+  } catch (err) {
+    console.error('Project archive error:', err)
+    res.status(500).json({ error: 'Failed to archive project' })
+  }
+})
+
+router.delete('/project/:id', async (req: AuthRequest, res) => {
+  const { id } = req.params
+  const { id: userId } = req.authen
+
+  if (!id) {
+    return res.status(400).json({ error: 'Missing project id' })
+  }
+
+  try {
+    const result = await mdProjectDelete(id)
+    delCache([CKEY.USER_PROJECT, userId])
+
+    res.json({
+      status: 200,
+      data: result
+    })
+  } catch (err) {
+    console.error('Project delete error:', err)
+    res.status(500).json({ error: 'Failed to delete project' })
+  }
 })
 
 export default router

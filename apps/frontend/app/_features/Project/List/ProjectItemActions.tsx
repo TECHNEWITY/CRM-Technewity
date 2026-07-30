@@ -6,7 +6,7 @@ import { projectService } from '@/services/project'
 import { Project } from '@prisma/client'
 import { DropdownMenu } from '@ui-components'
 import { useParams } from 'next/navigation'
-import { HiOutlineArchive, HiOutlineDotsVertical } from 'react-icons/hi'
+import { HiOutlineArchive, HiOutlineDotsVertical, HiOutlineTrash } from 'react-icons/hi'
 import { HiOutlineStar } from 'react-icons/hi2'
 
 export default function ProjectItemAction({
@@ -31,10 +31,20 @@ export default function ProjectItemAction({
       moveToArchive(project)
     }
 
-    // const value = isArchived ? false : true
-    // projectService.archive(project.id, value).then(res => {
-    //   console.log(res)
-    // })
+    const value = isArchived ? false : true
+    projectService.archive(project.id, value).then(res => {
+      console.log(res)
+    })
+  }
+
+  const deleteProjectHandler = () => {
+    if (confirm(`Are you sure you want to delete project "${project.name}"?`)) {
+      projectService.delete(project.id).then(() => {
+        window.location.reload()
+      }).catch(err => {
+        console.error('Delete project failed:', err)
+      })
+    }
   }
 
   const addToFavoriteHandler = () => {
@@ -66,6 +76,11 @@ export default function ProjectItemAction({
             onClick={moveToArchiveHandler}
             icon={<HiOutlineArchive />}
             title={isArchived ? 'Remove from archive' : 'Move to archive'}
+          />
+          <DropdownMenu.Item
+            onClick={deleteProjectHandler}
+            icon={<HiOutlineTrash />}
+            title={'Delete project'}
           />
         </DropdownMenu.Content>
       </DropdownMenu>
