@@ -193,24 +193,30 @@ export default function SettingStorageConfiguration() {
             <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-xs text-amber-800 dark:text-amber-300">
               <strong>Secure Setup:</strong> Files are stored via a Service Account and accessed only through this app's backend. No direct Google Drive URLs are ever shared.
             </div>
-            <Form.Input
-              title="Service Account Email"
-              placeholder="my-service@project.iam.gserviceaccount.com"
-              help="The email of your Google Cloud Service Account"
-              {...registerForm('clientEmail', formik)}
-            />
-            <Form.Textarea
-              title="Private Key"
-              placeholder="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
-              help="Paste the full private key from your service account JSON file"
-              {...registerForm('privateKey', formik)}
-            />
-            <Form.Input
-              title="Google Drive Folder ID"
-              placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
-              help="The ID from the folder URL: drive.google.com/drive/folders/YOUR_FOLDER_ID"
-              {...registerForm('folderId', formik)}
-            />
+            <div>
+              <Form.Input
+                title="Service Account Email"
+                placeholder="my-service@project.iam.gserviceaccount.com"
+                {...registerForm('clientEmail', formik)}
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">The email of your Google Cloud Service Account</p>
+            </div>
+            <div>
+              <Form.Textarea
+                title="Private Key"
+                placeholder="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+                {...registerForm('privateKey', formik)}
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Paste the full private key from your service account JSON file</p>
+            </div>
+            <div>
+              <Form.Input
+                title="Google Drive Folder ID"
+                placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
+                {...registerForm('folderId', formik)}
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">The ID from the folder URL: drive.google.com/drive/folders/YOUR_FOLDER_ID</p>
+            </div>
           </div>
         )}
 
