@@ -12,12 +12,17 @@ export const orgUpdate = (data: Partial<Organization>) => {
 export const orgUpdateStorageConfig = (orgId: string, data: {
   type: OrgStorageType,
   config: {
-    bucketName: string
-    region: string
-    secretKey: string
-    accessKey: string
-    maxStorageSize: string
+    // AWS S3 / DigitalOcean fields
+    bucketName?: string
+    region?: string
+    secretKey?: string
+    accessKey?: string
+    maxStorageSize?: string
     endpoint?: string
+    // Google Drive fields
+    clientEmail?: string
+    privateKey?: string
+    folderId?: string
   }
 }) => {
   return httpPut('/api/org-storage', {

@@ -9,13 +9,16 @@ import {
   mdTaskGetOne,
   mdTaskUpdate
 } from '@database'
-import { FileOwnerType, FileStorage } from '@prisma/client'
+import { FileOwnerType, FileStorage, OrgStorageType } from '@prisma/client'
 import { AuthRequest } from '../../types'
 import { fileStorageModel, pmClient } from 'packages/database/src/lib/_prisma'
 import { CKEY, findNDelCaches } from '../../lib/redis'
 import StorageCache from '../../caches/StorageCache'
 import { StorageService } from '../../services/storage.service'
 import MaxStorageSizeException from '../../exceptions/MaxStorageSizeException'
+import GoogleDriveStorageProvider from '../../providers/storage/GoogleDriveStorageProvider'
+import OrganizationStorageService from '../../services/organizationStorage.service'
+import { IStorageGoogleDriveConfig } from '../../services/organizationStorage.service'
 
 const router = Router()
 
@@ -208,6 +211,64 @@ router.get('/get-object-url', async (req, res) => {
   } catch (error) {
     console.log('Error generating view URL:', error)
     res.status(500).send(error)
+  }
+})
+
+/**
+ * Secure Google Drive file proxy
+ * Streams a Drive file through the backend so it is never directly accessible from Drive.
+ * Auth: user must be authenticated (authMiddleware applied at router level in index.ts)
+ */
+router.get('/drive-proxy/:driveFileId', async (req: AuthRequest, res) => {
+  const { driveFileId } = req.params
+  const { orgId } = req.query as { orgId: string }
+
+  if (!driveFileId || !orgId) {
+    return res.status(400).send('driveFileId and orgId are required')
+  }
+
+  try {
+    // Load org Drive config
+    const orgStorageSvc = new OrganizationStorageService(orgId)
+    const storageConfig = await orgStorageSvc.getConfig()
+
+    if (!storageConfig || storageConfig.type !== OrgStorageType.GOOGLE_DRIVE) {
+      return res.status(404).send('Google Drive storage not configured for this organization')
+    }
+
+    const driveConfig = storageConfig.config as IStorageGoogleDriveConfig
+    const driveProvider = new GoogleDriveStorageProvider({
+      clientEmail: driveConfig.clientEmail,
+      privateKey: driveConfig.privateKey,
+      folderId: driveConfig.folderId,
+      orgId
+    })
+
+    // Fetch file metadata for headers
+    const meta = await driveProvider.getFileMetadata(driveFileId)
+    if (meta) {
+      res.setHeader('Content-Type', meta.mimeType)
+      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(meta.name)}"`)
+      if (meta.size && meta.size !== '0') {
+        res.setHeader('Content-Length', meta.size)
+      }
+    }
+
+    // Stream the file directly to the response
+    const stream = await driveProvider.getObjectStream(driveFileId)
+    if (!stream) {
+      return res.status(404).send('File not found in Google Drive')
+    }
+
+    stream.pipe(res)
+    stream.on('error', (err) => {
+      console.error('Drive proxy stream error:', err)
+      if (!res.headersSent) res.status(500).send('Stream error')
+    })
+
+  } catch (error) {
+    console.error('drive-proxy error:', error)
+    res.status(500).send('Internal server error')
   }
 })
 

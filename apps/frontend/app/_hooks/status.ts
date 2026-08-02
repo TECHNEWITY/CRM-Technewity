@@ -9,9 +9,10 @@ import { StatusType } from '@prisma/client'
 
 interface Props {
   currentColor?: string
+  statusType?: StatusType
 }
 
-export const useStatus = ({ currentColor }: Props) => {
+export const useStatus = ({ currentColor, statusType }: Props) => {
   const { statuses, updateStatus, addStatus } = useProjectStatusStore()
   const params = useParams()
 
@@ -58,7 +59,7 @@ export const useStatus = ({ currentColor }: Props) => {
       color: currentColor || DEFAULT_COLOR,
       order,
       projectId,
-      type: StatusType.TODO
+      type: statusType || StatusType.TODO
     }
     target.value = ''
     addStatus(newTaskStatus)

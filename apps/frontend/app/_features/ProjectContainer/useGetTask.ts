@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react'
+import axios from 'axios'
 import { extractDueDate } from '@namviek/core'
 import { ExtendedTask, useTaskStore } from '@/store/task'
 import { taskGetByCond } from '@/services/task'
@@ -83,6 +84,10 @@ export const useGetTaskHandler = () => {
         addAllTasks(data)
         setTaskLoading(false)
       }, 300)
+    }).catch(err => {
+      if (axios.isCancel(err)) return
+      console.error(err)
+      setTaskLoading(false)
     })
 
     return () => {

@@ -4,7 +4,7 @@ import { authMiddleware } from '../../middlewares'
 import { AuthRequest } from '../../types'
 import InternalServerException from '../../exceptions/InternalServerException'
 import { OrgStorageType } from '@prisma/client'
-import { IStorageAWSConfig } from '../../services/organizationStorage.service'
+import { IStorageAWSConfig, IStorageGoogleDriveConfig } from '../../services/organizationStorage.service'
 import { GB, MB, StorageService } from '../../services/storage.service'
 import StorageCache from '../../caches/StorageCache'
 
@@ -14,9 +14,10 @@ export class OrganizationStorageController extends BaseController {
   storageService: StorageService
   constructor() {
     super()
-    // only use this service to validate aws config
+    // only use this service to validate storage config
     this.storageService = new StorageService('1')
   }
+
   @Get('')
   async getOrgStorageConfig() {
     const req = this.req as AuthRequest
@@ -25,7 +26,18 @@ export class OrganizationStorageController extends BaseController {
       const orgRepo = new OrgStorageRepository()
       const data = await orgRepo.getAwsConfig(orgId)
 
-      return data.config
+      // Return config but mask sensitive keys
+      const config = data?.config as Record<string, unknown> || {}
+      return {
+        type: data?.type,
+        config: {
+          ...config,
+          // Mask sensitive values so they don't leak to the frontend
+          secretKey: config.secretKey ? '••••••••' : undefined,
+          privateKey: config.privateKey ? '••••••••' : undefined,
+          accessKey: config.accessKey ? '••••••••' : undefined
+        }
+      }
     } catch (error) {
       throw new InternalServerException()
     }
@@ -38,15 +50,51 @@ export class OrganizationStorageController extends BaseController {
       const { orgId, type, config } = req.body as {
         orgId: string
         type: OrgStorageType
-        config: IStorageAWSConfig & { endpoint?: string }
+        config: (IStorageAWSConfig & { endpoint?: string }) | IStorageGoogleDriveConfig
       }
 
-      console.log('storage configuration', req.body)
+      console.log('storage configuration', { orgId, type })
 
       const { id } = req.authen
 
-      const { bucketName, region, secretKey, accessKey } = config
-      let maxStorageSize = parseInt(config.maxStorageSize + "", 10)
+      // ─── Google Drive ────────────────────────────────────────────────────
+      if (type === OrgStorageType.GOOGLE_DRIVE) {
+        const driveConfig = config as IStorageGoogleDriveConfig
+        const { clientEmail, privateKey, folderId } = driveConfig
+
+        if (!clientEmail || !privateKey || !folderId) {
+          throw new Error('Google Drive requires: clientEmail, privateKey, folderId')
+        }
+
+        console.log('Start validating Google Drive configuration')
+        const valid = await this.storageService.validateConfig({
+          type,
+          config: { clientEmail, privateKey, folderId }
+        })
+
+        if (!valid) {
+          throw new Error('Invalid Google Drive configuration – check your service account credentials and folder ID')
+        }
+
+        const orgRepo = new OrgStorageRepository()
+        const result = await orgRepo.updateOrCreateAwsConfig(orgId, {
+          organizationId: orgId,
+          config: { clientEmail, privateKey, folderId },
+          type,
+          createdAt: new Date(),
+          createdBy: id,
+          updatedAt: null,
+          updatedBy: null
+        })
+
+        StorageCache.deleteMaxStorageSize(orgId)
+        return result
+      }
+
+      // ─── AWS S3 / DigitalOcean ───────────────────────────────────────────
+      const s3Config = config as IStorageAWSConfig & { endpoint?: string }
+      const { bucketName, region, secretKey, accessKey } = s3Config
+      let maxStorageSize = parseInt(s3Config.maxStorageSize + '', 10)
 
       if (!bucketName || !region || !secretKey || !accessKey || !maxStorageSize) {
         throw new Error('Invalid storage configuration')
@@ -67,7 +115,6 @@ export class OrganizationStorageController extends BaseController {
       }
 
       console.log('Start validating storage configuration')
-      // Validate config based on storage type
       const valid = await this.storageService.validateConfig({
         type,
         config: {
@@ -75,7 +122,7 @@ export class OrganizationStorageController extends BaseController {
           region,
           secretKey,
           accessKey,
-          endpoint: config.endpoint
+          endpoint: s3Config.endpoint
         }
       })
 
@@ -92,7 +139,7 @@ export class OrganizationStorageController extends BaseController {
           secretKey,
           accessKey,
           maxStorageSize,
-          endpoint: config.endpoint
+          endpoint: s3Config.endpoint
         },
         type,
         createdAt: new Date(),

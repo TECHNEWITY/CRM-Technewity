@@ -19,7 +19,7 @@ export default function SettingAboutContent() {
       title: "Storage configuration",
       icon: HiOutlineFolderOpen,
       content: SettingStorageConfiguration,
-      desc: "Choose between your own cloud storage (AWS S3 or DigitalOcean) for unlimited capacity or utilize our default storage with a fixed limit."
+      desc: "Choose your cloud storage: AWS S3, DigitalOcean Spaces, or Google Drive (free) for storing task attachments."
     },
   ]
 

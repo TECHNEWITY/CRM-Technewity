@@ -24,7 +24,7 @@ router.post('/project/status/:projectId', async (req: AuthRequest, res) => {
     name: body.name,
     color: body.color,
     order: body.order,
-    type: StatusType.TODO
+    type: body.type || StatusType.TODO
   }
   mdTaskStatusAdd(data)
     .then(result => {

@@ -1,5 +1,5 @@
 import StorageConfigurationNotFoundException from "../exceptions/StorageConfigurationNotFoundException"
-import OrganizationStorageService, { IStorageAWSConfig } from "./organizationStorage.service"
+import OrganizationStorageService, { IStorageAWSConfig, IStorageGoogleDriveConfig } from "./organizationStorage.service"
 import AwsS3StorageProvider from "../providers/storage/AwsS3StorageProvider"
 import { mdOrgGetOne, mdStorageGetOne, mdTaskGetOne, mdTaskUpdate } from "@database"
 import StorageCache from "../caches/StorageCache"
@@ -9,6 +9,7 @@ import { findNDelCaches } from "../lib/redis"
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
 import { IStorageProvider } from '../providers/storage/IStorageProvider';
 import DigitalOceanStorageProvider from '../providers/storage/DigitalOceanStorageProvider';
+import GoogleDriveStorageProvider from '../providers/storage/GoogleDriveStorageProvider';
 import { OrgStorageType } from "@prisma/client"
 import { HeadBucketCommand } from "@aws-sdk/client-s3"
 
@@ -50,33 +51,46 @@ export class StorageService {
     console.log('storage type', storage.type)
 
     switch (storage.type) {
-      case OrgStorageType.DIGITAL_OCEAN_S3:
+      case OrgStorageType.DIGITAL_OCEAN_S3: {
+        const c = config as IStorageAWSConfig
         this.storageProvider = new DigitalOceanStorageProvider({
-          region: config.region,
-          accessKey: config.accessKey,
-          secretKey: config.secretKey,
-          bucketName: config.bucketName,
+          region: c.region,
+          accessKey: c.accessKey,
+          secretKey: c.secretKey,
+          bucketName: c.bucketName,
           orgId: this.orgId
         })
         break
+      }
 
-      case OrgStorageType.AWS_S3:
+      case OrgStorageType.AWS_S3: {
+        const c = config as IStorageAWSConfig
         if (minioEndpoint) {
-          // Minio configuration
           this.storageProvider = new AwsS3StorageProvider({
             orgId: this.orgId,
-            ...config,
+            ...c,
             endpoint: minioEndpoint,
             forcePathStyle: true
           })
         } else {
-          // Standard AWS S3 configuration
           this.storageProvider = new AwsS3StorageProvider({
             orgId: this.orgId,
-            ...config
+            ...c
           })
         }
         break
+      }
+
+      case OrgStorageType.GOOGLE_DRIVE: {
+        const c = config as IStorageGoogleDriveConfig
+        this.storageProvider = new GoogleDriveStorageProvider({
+          clientEmail: c.clientEmail,
+          privateKey: c.privateKey,
+          folderId: c.folderId,
+          orgId: this.orgId
+        })
+        break
+      }
 
       default:
         throw new Error(`Unsupported storage type: ${storage.type}`)
@@ -133,22 +147,48 @@ export class StorageService {
   async validateConfig({ type, config }: {
     type: OrgStorageType,
     config: {
-      bucketName: string,
-      region: string,
-      secretKey: string,
-      accessKey: string,
-      endpoint?: string
+      // AWS / DigitalOcean fields
+      bucketName?: string,
+      region?: string,
+      secretKey?: string,
+      accessKey?: string,
+      endpoint?: string,
+      // Google Drive fields
+      clientEmail?: string,
+      privateKey?: string,
+      folderId?: string
     }
   }): Promise<boolean> {
     try {
       if (type === OrgStorageType.AWS_S3) {
-        return await this.validateAwsConfig(config)
+        return await this.validateAwsConfig(config as { bucketName: string; region: string; secretKey: string; accessKey: string; endpoint?: string })
       } else if (type === OrgStorageType.DIGITAL_OCEAN_S3) {
-        return await this.validateDigitalOceanConfig(config)
+        return await this.validateDigitalOceanConfig(config as { bucketName: string; region: string; secretKey: string; accessKey: string })
+      } else if (type === OrgStorageType.GOOGLE_DRIVE) {
+        return await this.validateGoogleDriveConfig(config as { clientEmail: string; privateKey: string; folderId: string })
       }
       return false
     } catch (error) {
       console.error('Storage validation error:', error)
+      return false
+    }
+  }
+
+  private async validateGoogleDriveConfig(config: {
+    clientEmail: string,
+    privateKey: string,
+    folderId: string
+  }): Promise<boolean> {
+    try {
+      const provider = new GoogleDriveStorageProvider({
+        clientEmail: config.clientEmail,
+        privateKey: config.privateKey,
+        folderId: config.folderId,
+        orgId: this.orgId
+      })
+      return await provider.validateConfig()
+    } catch (error) {
+      console.error('Google Drive validation error:', error)
       return false
     }
   }

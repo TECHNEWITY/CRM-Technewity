@@ -9,9 +9,16 @@ export interface IStorageAWSConfig {
   maxStorageSize: number
 }
 
+export interface IStorageGoogleDriveConfig {
+  clientEmail: string
+  privateKey: string
+  folderId: string
+  maxStorageSize: number
+}
+
 export interface IStorageConfig {
   type: OrgStorageType
-  config: IStorageAWSConfig
+  config: IStorageAWSConfig | IStorageGoogleDriveConfig
 }
 
 export default class OrganizationStorageService {
@@ -32,7 +39,7 @@ export default class OrganizationStorageService {
 
     return {
       type: storage.type,
-      config: storage.config as unknown as IStorageAWSConfig
+      config: storage.config as unknown as IStorageAWSConfig | IStorageGoogleDriveConfig
     }
   }
 }

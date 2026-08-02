@@ -6,8 +6,7 @@ export class OrgStorageRepository {
   async getAwsConfig(orgId: string) {
     return orgStorage.findFirst({
       where: {
-        organizationId: orgId,
-        // type: OrgStorageType.AWS_S3
+        organizationId: orgId
       }
     })
   }
@@ -15,21 +14,24 @@ export class OrgStorageRepository {
   async updateOrCreateAwsConfig(orgId: string, data: Omit<OrganizationStorage, 'id'>) {
     const result = await orgStorage.findFirst({
       where: {
-        organizationId: orgId,
-        // type: OrgStorageType.AWS_S3
+        organizationId: orgId
       }
     })
 
     if (!data.config) return null
-    const config = data.config as { [key: string]: string }
+    const config = data.config as { [key: string]: unknown }
     const type = data.type
 
+    // For S3-based providers, set storage size; for Google Drive, use unlimited
     const TB = 1024 * 1024 * 1024 * 1024 // 1TB
-    await mdOrgUpdate(orgId, {
-      maxStorageSize: 9999 * TB
-    })
+    const maxStorageSize =
+      type === OrgStorageType.GOOGLE_DRIVE
+        ? 9999 * TB // effectively unlimited — Google Drive storage is the user's own quota
+        : 9999 * TB
 
-    console.log('data', data)
+    await mdOrgUpdate(orgId, { maxStorageSize })
+
+    console.log('updateOrCreateAwsConfig', { type, orgId })
 
     if (result) {
       return orgStorage.update({
@@ -38,28 +40,39 @@ export class OrgStorageRepository {
         },
         data: {
           type,
-          config: config,
+          config: config as object,
           updatedAt: data.updatedAt,
           updatedBy: data.updatedBy
         }
       })
     }
 
-    // FIXME: prisma throw an error if only data provided
-    // it's stupid orm =.=!
-    // must re-define config object then it works
+    // Build config object based on storage type
+    let configToSave: Record<string, unknown>
+
+    if (type === OrgStorageType.GOOGLE_DRIVE) {
+      configToSave = {
+        clientEmail: config.clientEmail,
+        privateKey: config.privateKey,
+        folderId: config.folderId
+      }
+    } else {
+      // AWS S3 / DigitalOcean
+      configToSave = {
+        type,
+        bucketName: config.bucketName,
+        region: config.region,
+        secretKey: config.secretKey,
+        accessKey: config.accessKey,
+        ...(config.endpoint ? { endpoint: config.endpoint } : {})
+      }
+    }
+
     return orgStorage.create({
       data: {
-        ...data, config: {
-          type,
-          bucketName: config.bucketName,
-          region: config.region,
-          secretKey: config.secretKey,
-          accessKey: config.accessKey
-        }
+        ...data,
+        config: configToSave as any
       }
     })
   }
-
 }
-

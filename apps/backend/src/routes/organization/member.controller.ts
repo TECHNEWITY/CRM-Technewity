@@ -1,5 +1,6 @@
 import {
   mdMemberGetAllByProjectId,
+  mdOrgGetOne,
   mdOrgMemberAdd,
   mdOrgMemberExist,
   mdOrgMemberGet,
@@ -62,31 +63,42 @@ export class OrganizationMemberController extends BaseController {
     }
 
     const feGateway = process.env.NEXT_PUBLIC_FE_GATEWAY || 'https://crm.technewity.com/'
+
+    // Fetch org name for email content
+    let orgName = 'your team'
+    try {
+      const org = await mdOrgGetOne(orgId)
+      if (org && org.name) orgName = org.name
+    } catch (_) {
+      // silently fall back to generic name
+    }
+
     const foundUser = await mdUserFindEmail(email)
 
     if (!foundUser) {
       // User has not registered an account yet - dispatch invitation email
       try {
         const signupLink = `${feGateway}sign-up`
-        sendEmail({
+        await sendEmail({
           emails: [email],
-          subject: `[Technewity Labs]: You are invited to join an Organization`,
+          subject: `You have been invited to join "${orgName}"`,
           html: `
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f8f8; border-radius: 5px;">
         <tr>
             <td style="padding: 20px;">
-                <h1 style="color: #4a4a4a; text-align: center;">Organization Invitation</h1>
+                <h1 style="color: #4a4a4a; text-align: center;">You've Been Invited!</h1>
                 <p style="font-size: 16px;">Hello,</p>
-                <p style="font-size: 16px;">You have been invited to join a team workspace on Technewity Labs.</p>
-                <p style="font-size: 16px;">Click the button below to create your account and access the workspace:</p>
+                <p style="font-size: 16px;">You have been invited to join <strong>${orgName}</strong> on Technewity Labs.</p>
+                <p style="font-size: 16px;">Create your free account and start collaborating:</p>
                 <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
                         <td align="center" style="padding: 20px 0;">
-                            <a href="${signupLink}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Accept Invitation & Sign Up</a>
+                            <a href="${signupLink}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Accept Invitation &amp; Sign Up</a>
                         </td>
                     </tr>
                 </table>
+                <p style="font-size: 14px; color: #666;">If you did not expect this invitation, you can safely ignore this email.</p>
                 <p style="font-size: 16px;">Best regards,<br>Technewity Labs Team</p>
             </td>
         </tr>
@@ -125,17 +137,18 @@ export class OrganizationMemberController extends BaseController {
     })
 
     try {
-      sendEmail({
+      await sendEmail({
         emails: [email],
-        subject: `[Technewity Labs]: You have been added to an Organization`,
+        subject: `You have been added to "${orgName}"`,
         html: `
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f8f8; border-radius: 5px;">
         <tr>
             <td style="padding: 20px;">
-                <h1 style="color: #4a4a4a; text-align: center;">Organization Invitation</h1>
+                <h1 style="color: #4a4a4a; text-align: center;">You've Been Added to a Team!</h1>
                 <p style="font-size: 16px;">Hello <strong>${foundUser.name}</strong>,</p>
-                <p style="font-size: 16px;">You have been invited and added to a workspace on Technewity Labs.</p>
+                <p style="font-size: 16px;">Great news! You have been added to <strong>${orgName}</strong> on Technewity Labs.</p>
+                <p style="font-size: 16px;">You can now log in and start working with your team:</p>
                 <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
                         <td align="center" style="padding: 20px 0;">
@@ -143,6 +156,7 @@ export class OrganizationMemberController extends BaseController {
                         </td>
                     </tr>
                 </table>
+                <p style="font-size: 14px; color: #666;">If you did not expect to be added, please contact your organization admin.</p>
                 <p style="font-size: 16px;">Best regards,<br>Technewity Labs Team</p>
             </td>
         </tr>

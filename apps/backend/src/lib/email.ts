@@ -1,16 +1,4 @@
 import { Resend } from 'resend'
-let resend: Resend;
-let ready = false
-try {
-  resend = new Resend(process.env.RESEND_TOKEN)
-  ready = true
-} catch (error) {
-  console.warn("Resend token is missing")
-}
-
-const resendFromEmail = process.env.RESEND_EMAIL_FROM || 'onboarding@resend.dev'
-const resendFromEmailName = `${process.env.RESEND_EMAIL_NAME || 'Technewity Labs'}`
-const appName = `${process.env.NEXT_PUBLIC_APP_NAME || 'Technewity Labs'}`
 
 interface IEmailFields {
   subject: string
@@ -19,29 +7,50 @@ interface IEmailFields {
   emails: string[]
 }
 
-const _cannotSendEmail = () => {
-  if (!ready) {
-    console.warn('Cannot send this email. Resend token is missing')
-    return true
+/**
+ * Dynamically resolves Resend configuration on every call.
+ * This guarantees that changes to .env or runtime environment variables
+ * are immediately picked up without needing hardcoded module-level state.
+ */
+export const sendEmail = async ({ emails, html, subject, text }: IEmailFields) => {
+  const token = process.env.RESEND_TOKEN
+  const fromEmail = process.env.RESEND_EMAIL_FROM || 'noreply@technewity.com'
+  const fromName = process.env.RESEND_EMAIL_NAME || process.env.NEXT_PUBLIC_APP_NAME || 'Technewity Labs'
+
+  if (!token) {
+    console.error('[Resend Error] Cannot send email. RESEND_TOKEN is missing in process.env!')
+    return { error: { message: 'RESEND_TOKEN is missing in environment variables' } }
   }
 
-  return false
-}
-
-
-export const sendEmail = async ({ emails, html, subject }: IEmailFields) => {
-  if (_cannotSendEmail()) return
   try {
+    const resend = new Resend(token)
+    const sender = `${fromName} <${fromEmail}>`
+
+    console.log(`[Resend Email Dispatching] From: "${sender}" -> To:`, emails, `Subject: "${subject}"`)
+
     const response = await resend.emails.send({
-      from: `${resendFromEmailName} <${resendFromEmail}>`,
+      from: sender,
       to: emails,
       subject,
-      html
+      html: html || text || ''
     })
-    console.log('[Resend Email Success] Dispatched to:', emails, response)
+
+    const res = response as any
+
+    if (res?.error) {
+      console.error('[Resend API Failure] Email was NOT delivered by Resend:', {
+        to: emails,
+        from: sender,
+        error: res.error
+      })
+      return response
+    }
+
+    console.log('[Resend API Success] Email successfully sent! Email ID:', res?.id || res?.data?.id, 'To:', emails)
     return response
   } catch (error) {
-    console.error('[Resend Email Error] Failed to send email:', error)
+    console.error('[Resend Exception] Unexpected exception while sending email:', error)
+    return { error }
   }
 }
 
@@ -54,9 +63,10 @@ export const sendVerifyEmail = ({
   email: string
   token: string
 }) => {
-  if (_cannotSendEmail()) return
+  const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Technewity Labs'
+  const feGateway = process.env.NEXT_PUBLIC_FE_GATEWAY || 'https://crm.technewity.com/'
+  const verificationLink = `${feGateway}email-verification?token=${token}`
 
-  const verificationLink = `${process.env.NEXT_PUBLIC_FE_GATEWAY}email-verification?token=${token}`
   return sendEmail({
     emails: [email],
     subject: `[${appName}]: Please Verify Your Email Address`,

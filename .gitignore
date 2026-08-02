@@ -51,3 +51,4 @@ logs/*
 .vercel
 
 .cursor/*
+crm-technewity-*.json

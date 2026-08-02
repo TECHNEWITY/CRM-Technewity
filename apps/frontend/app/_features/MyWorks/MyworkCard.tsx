@@ -1,5 +1,6 @@
 'use client'
 
+import axios from 'axios'
 import { ITaskQuery, taskGetByCond } from '@/services/task'
 import { Task } from '@prisma/client'
 import { useEffect, useMemo, useState } from 'react'
@@ -85,6 +86,10 @@ export default function MyworkCard({ title, query }: IMyworkCardProps) {
         setLoading(false)
         setTotal(total)
         setTasks(data)
+      }).catch(err => {
+        if (axios.isCancel(err)) return
+        console.error(err)
+        setLoading(false)
       })
     } else {
       setLoading(false)
