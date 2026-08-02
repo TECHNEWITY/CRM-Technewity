@@ -108,7 +108,7 @@ export default function useFileUpload() {
           mimeType: file.type,
           keyName: fileData.keyName,
           createdAt: fileData.createdAt || undefined,
-          url: fileData.url
+          url: fileData.url || url || ''
         }
       }
 
