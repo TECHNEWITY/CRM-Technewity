@@ -61,3 +61,31 @@ export const storageGetObjectUrl = async (params: {
 }) => {
   return httpGet('/api/storage/get-object-url', { params })
 }
+
+export const storageUploadDriveDirect = ({
+  orgId,
+  projectId,
+  name,
+  mimeType,
+  base64Data,
+  owner,
+  ownerType
+}: {
+  orgId: string
+  projectId: string
+  name: string
+  mimeType: string
+  base64Data: string
+  owner: string
+  ownerType?: string
+}) => {
+  return httpPost('/api/storage/upload-drive-direct', {
+    orgId,
+    projectId,
+    name,
+    mimeType,
+    base64Data,
+    owner,
+    ownerType
+  })
+}

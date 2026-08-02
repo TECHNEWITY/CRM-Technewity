@@ -78,13 +78,87 @@ router.post('/create-presigned-url', async (req, res, next) => {
         url: url
       }
     })
-
-
   } catch (error) {
     console.log(error)
     res.status(error.status).send(error.message)
   }
+})
 
+/**
+ * Direct Google Drive Upload endpoint
+ * Accepts base64 encoded file data and uploads directly to Google Drive in ONE fast request.
+ */
+router.post('/upload-drive-direct', async (req: AuthRequest, res) => {
+  const { id: uid } = req.authen
+  const {
+    orgId,
+    projectId,
+    name,
+    mimeType,
+    base64Data,
+    owner,
+    ownerType
+  } = req.body as {
+    orgId: string
+    projectId: string
+    name: string
+    mimeType: string
+    base64Data: string
+    owner: string
+    ownerType: FileOwnerType
+  }
+
+  try {
+    const orgStorageSvc = new OrganizationStorageService(orgId)
+    const storageConfig = await orgStorageSvc.getConfig()
+
+    if (!storageConfig || storageConfig.type !== OrgStorageType.GOOGLE_DRIVE) {
+      return res.status(400).send('GOOGLE_DRIVE_NOT_CONFIGURED')
+    }
+
+    const driveConfig = storageConfig.config as IStorageGoogleDriveConfig
+    const driveProvider = new GoogleDriveStorageProvider({
+      clientEmail: driveConfig.clientEmail,
+      privateKey: driveConfig.privateKey,
+      folderId: driveConfig.folderId,
+      orgId
+    })
+
+    // Convert base64 string to Buffer
+    const fileBuffer = Buffer.from(base64Data, 'base64')
+
+    const { driveFileId, url } = await driveProvider.uploadFile(name, mimeType, fileBuffer)
+
+    const savedFile = await mdStorageAdd({
+      organizationId: orgId,
+      projectId,
+      name,
+      keyName: driveFileId,
+      type: 'FILE' as any,
+      url,
+      size: fileBuffer.length,
+      mimeType,
+      parentId: null,
+      isDeleted: false,
+      owner,
+      ownerType: ownerType || FileOwnerType.TASK,
+      createdAt: new Date(),
+      createdBy: uid,
+      deletedAt: null,
+      deletedBy: null
+    })
+
+    res.status(200).json({
+      data: {
+        file: savedFile,
+        name: driveFileId,
+        url
+      }
+    })
+  } catch (error) {
+    console.error('upload-drive-direct error:', error)
+    res.status(500).send(error)
+  }
 })
 
 router.delete('/del-file', async (req: AuthRequest, res) => {

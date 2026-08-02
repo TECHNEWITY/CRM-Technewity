@@ -3,7 +3,8 @@ import {
   storageCreatePresignedUrl,
   storagePutFile,
   storageSaveToDrive,
-  storageGetObjectUrl
+  storageGetObjectUrl,
+  storageUploadDriveDirect
 } from '@/services/storage'
 import { FileOwnerType, FileStorage, FileType } from '@prisma/client'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
@@ -71,6 +72,45 @@ export default function useFileUpload() {
       const { name, presignedUrl, url } = res.data.data
 
       console.log('storage create presign', res.data.data, url, presignedUrl)
+
+      // Fast Direct Upload for Google Drive
+      if (presignedUrl && presignedUrl.startsWith('drive-upload:')) {
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            const result = reader.result as string
+            const base64 = result.split(',')[1] || result
+            resolve(base64)
+          }
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        })
+
+        const driveResult = await storageUploadDriveDirect({
+          orgId,
+          projectId,
+          name: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          base64Data,
+          owner: taskId,
+          ownerType: FileOwnerType.TASK
+        })
+
+        const fileData = driveResult.data.data.file as FileStorage
+
+        return {
+          id: fileData.id,
+          uploading: false,
+          randId,
+          name: file.name,
+          ext: sliceName[sliceName.length - 1],
+          size: file.size,
+          mimeType: file.type,
+          keyName: fileData.keyName,
+          createdAt: fileData.createdAt || undefined,
+          url: fileData.url
+        }
+      }
 
       const ret = await storagePutFile(presignedUrl, file)
 

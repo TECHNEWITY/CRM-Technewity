@@ -1,7 +1,8 @@
 import {
   storageCreatePresignedUrl,
   storagePutFile,
-  storageSaveToDrive
+  storageSaveToDrive,
+  storageUploadDriveDirect
 } from '@/services/storage'
 import { FileOwnerType, FileType } from '@prisma/client'
 import { messageError } from '@ui-components'
@@ -36,6 +37,37 @@ export default function useAvatarUpload() {
 
       const { name, presignedUrl, url } = res.data.data
       const keyName = name as string
+
+      // Fast Direct Upload for Google Drive
+      if (presignedUrl && presignedUrl.startsWith('drive-upload:')) {
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            const result = reader.result as string
+            const base64 = result.split(',')[1] || result
+            resolve(base64)
+          }
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        })
+
+        const driveResult = await storageUploadDriveDirect({
+          orgId,
+          projectId,
+          name: file.name,
+          mimeType: file.type || 'image/jpeg',
+          base64Data,
+          owner: ownerId,
+          ownerType: FileOwnerType.USER
+        })
+
+        const fileData = driveResult.data.data.file
+
+        return {
+          url: fileData.url,
+          fileId: fileData.id
+        }
+      }
 
       // Upload to S3
       await storagePutFile(presignedUrl, file)
