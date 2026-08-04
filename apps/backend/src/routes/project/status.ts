@@ -162,19 +162,21 @@ router.delete('/project/status/:id', async (req: AuthRequest, res) => {
   const id = req.params.id
   const { id: uid } = req.authen
 
-  mdTaskStatusDel(id)
-    .then(result => {
+  try {
+    const result = await mdTaskStatusDel(id)
+    if (result && result.projectId) {
       const key = [CKEY.PROJECT_STATUS, result.projectId]
-      delCache(key)
+      await delCache(key)
       statusPusherJob.triggerUpdateEvent({
         projectId: result.projectId,
         uid
       })
-      res.json({ status: 200, data: result })
-    })
-    .catch(err => {
-      console.log(err)
-    })
+    }
+    return res.json({ status: 200, data: result })
+  } catch (err) {
+    console.log('error delete status', err)
+    return res.status(500).json({ status: 500, error: 'Failed to delete status' })
+  }
 })
 
 export default router

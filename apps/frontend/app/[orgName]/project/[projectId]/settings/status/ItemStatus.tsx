@@ -1,4 +1,5 @@
 import { TaskStatus } from '@prisma/client'
+import localforage from 'localforage'
 import { useDrag, useDrop, DropTargetMonitor } from 'react-dnd'
 import {
   projectStatusDel,
@@ -73,14 +74,17 @@ export const ItemStatus = ({ status, index, moveItem }: IItemStatus) => {
       message:
         `All tasks with ${status.name} status will be moved to the backlog after this status is deleted. Are you sure you want to delete it?`,
       yes: () => {
-        const { id } = status
+        const { id, projectId } = status
 
         try {
           delStatus(id)
           projectStatusDel(id)
+          if (projectId) {
+            localforage.removeItem(`PROJECT_STATUS_${projectId}`)
+          }
         } catch (error) {
           console.log(error)
-          messageError('Delete status successfully')
+          messageError('Failed to delete status')
         }
       }
     })

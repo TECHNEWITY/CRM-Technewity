@@ -197,11 +197,9 @@ export default function useUpdateGroupbyItem() {
     }
 
     timeout = setTimeout(() => {
-      if (oldGroupByType.current !== filter.groupBy) {
-        updateGroupbyItems()
-        oldGroupByType.current = filter.groupBy
-      }
-    }, 350) as unknown as number
+      updateGroupbyItems()
+      oldGroupByType.current = filter.groupBy
+    }, 200) as unknown as number
   }, [
     filter.groupBy,
     JSON.stringify(members),

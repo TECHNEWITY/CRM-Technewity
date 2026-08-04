@@ -14,6 +14,7 @@ import TaskDate from '../views/TaskDate'
 import { HiOutlineCalendar } from 'react-icons/hi2'
 import TaskAssignee from '../views/TaskAssignee'
 import TaskCheckbox from '@/components/TaskCheckbox'
+import TaskActions from '@/features/TaskActions'
 import { GoTasklist } from 'react-icons/go'
 import TaskChecklist from '@/features/TaskChecklist'
 import { useMemo } from 'react'
@@ -31,11 +32,7 @@ function BoardItemCover({ cover }: { cover: string | null }) {
 }
 
 export default function BoardItem({ data }: { data: ExtendedTask }) {
-  // const { orgID, projectId } = useParams()
-  // const { replace } = useRouter()
   const { getStatusTypeByTaskId } = useStatusUtils()
-  // const { getSp } = useUrl()
-  // const link = `${orgID}/project/${projectId}?mode=${getSp('mode')}&taskId=${data.id}`
   const progress = useMemo(() => {
     const done = data.checklistDone || 0
     const todo = data.checklistTodos || 0
@@ -53,7 +50,6 @@ export default function BoardItem({ data }: { data: ExtendedTask }) {
       return
     }
     pushState('taskId', data.id)
-    // replace(link)
   }
 
   const isOverdue =
@@ -66,7 +62,10 @@ export default function BoardItem({ data }: { data: ExtendedTask }) {
   }
 
   return (
-    <div className="board-item relative">
+    <div className="board-item relative group">
+      <div className="absolute top-2.5 right-2.5 z-20 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+        <TaskActions taskId={data.id} />
+      </div>
       <BoardItemCover cover={data.cover} />
       <PriorityText type={data.priority || 'LOW'} />
       <Loading.Absolute enabled={includeRandID} />

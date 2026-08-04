@@ -334,70 +334,79 @@ router.delete('/project/tasks', async (req: AuthRequest, res) => {
   const { ids, projectId } = req.query as { ids: string[]; projectId: string }
   console.log('delete multiple task', ids, projectId)
   try {
-    // Get tasks before deletion for cleanup purposes
-    // const tasksToDelete = await mdTaskGetAll({ id: { in: ids } })
-    
-    // Delete all tasks in a single operation
-    await mdTaskDeleteMany(ids)
-    
-    const key = [CKEY.TASK_QUERY, projectId]
+    if (!ids || !ids.length) {
+      return res.json({ status: 200, data: { deletedCount: 0 } })
+    }
 
-    // Clean up related data
-    // for (const task of tasksToDelete) {
-    //   taskReminderJob.delete(task.id)
-    //   if (!task.done && task.assigneeIds && task.assigneeIds[0]) {
-    //     await deleteTodoCounter([task.assigneeIds[0], projectId])
-    //   }
-    // }
+    const taskIds = Array.isArray(ids) ? ids : [ids]
+    await mdTaskDeleteMany(taskIds)
 
-    await findNDelCaches(key)
+    if (projectId) {
+      await findNDelCaches([CKEY.TASK_QUERY, projectId])
+      await findNDelCaches(CKEY.TASK_QUERY)
+    }
+
     taskPusherJob.triggerUpdateEvent({
-      projectId,
+      projectId: projectId || '',
       type: 'delete-many',
       data: null,
       uid: req.authen.id
     })
 
-    res.json({
+    return res.json({
       status: 200,
-      data: { deletedCount: ids.length }
+      data: { deletedCount: taskIds.length }
     })
   } catch (error) {
     console.log('error delete multiple', error)
-    res.status(500).json({ error: 'Failed to delete tasks' })
+    return res.status(500).json({ status: 500, error: 'Failed to delete tasks' })
   }
 })
 
 router.delete('/project/task', async (req: AuthRequest, res) => {
-  // const { id: uid } = req.authen
   const { id, projectId } = req.query as { id: string; projectId: string }
 
   try {
+    const existingTask = await mdTaskGetOne(id)
+    if (!existingTask) {
+      // Task is already deleted from DB
+      if (projectId) {
+        await findNDelCaches([CKEY.TASK_QUERY, projectId])
+      }
+      await findNDelCaches(CKEY.TASK_QUERY)
+      return res.json({
+        status: 200,
+        data: { id, deleted: true }
+      })
+    }
+
     const result = await mdTaskDelete(id)
-    const key = [CKEY.TASK_QUERY, projectId]
+    const targetProjectId = projectId || existingTask.projectId
 
     taskReminderJob.delete(id)
     if (!result.done && result.assigneeIds && result.assigneeIds[0]) {
       console.log('delete todo counter')
-      await deleteTodoCounter([result.assigneeIds[0], projectId])
+      await deleteTodoCounter([result.assigneeIds[0], targetProjectId])
     }
 
-    await findNDelCaches(key)
+    await findNDelCaches([CKEY.TASK_QUERY, targetProjectId])
+    await findNDelCaches(CKEY.TASK_QUERY)
+
     taskPusherJob.triggerUpdateEvent({
-      projectId,
+      projectId: targetProjectId,
       type: 'delete',
       data: { id },
       uid: req.authen.id
     })
 
-    console.log('deleted task', id)
-    res.json({
+    console.log('deleted task permanently', id)
+    return res.json({
       status: 200,
       data: result
     })
   } catch (error) {
-    console.log('error delete', error)
-    res.status(500)
+    console.log('error delete task', error)
+    return res.status(500).json({ status: 500, error: 'Failed to delete task' })
   }
 })
 
