@@ -365,15 +365,14 @@ export default function TaskDetail({
           </Tab>
         </section>
 
-        <section className="sticky bottom-[-99px] left-0 backdrop-blur-sm bg-white/50 dark:bg-gray-900/50">
-          <div className="text-right pt-3 pb-2">
-            <Button
-              type="submit"
-              loading={loading}
-              title="Submit changes"
-              primary
-            />
-          </div>
+        <section className="sticky bottom-0 left-0 right-0 z-30 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] shadow-lg flex items-center justify-end">
+          <Button
+            type="submit"
+            loading={loading}
+            title="Submit changes"
+            primary
+            className="w-full sm:w-auto"
+          />
         </section>
       </div>
     </form>
