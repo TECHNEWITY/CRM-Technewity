@@ -96,8 +96,8 @@ router.use(favRouter)
 router.use(automationRouter)
 router.use(dboardRouter)
 // router.use(orgRouter)
+router.use(taskRouter)
 router.use(projectRouter)
 router.use(projectMemberRouter)
-router.use(taskRouter)
 
 export default router

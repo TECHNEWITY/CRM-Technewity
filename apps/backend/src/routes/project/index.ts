@@ -466,7 +466,7 @@ router.put('/project/archive', async (req: AuthRequest, res) => {
   }
 })
 
-router.delete('/project/:id', async (req: AuthRequest, res) => {
+router.delete('/project/:id([0-9a-fA-F]{24})', async (req: AuthRequest, res) => {
   const { id } = req.params
   const { id: userId } = req.authen
 
