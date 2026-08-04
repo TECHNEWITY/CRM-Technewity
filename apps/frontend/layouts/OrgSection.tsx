@@ -57,8 +57,13 @@ function OrgInfo({ id }: { id: string }) {
       {/* {org.cover ? */}
       {/*   <img className="w-4 h-4 absolute border -bottom-[1px] -right-[1px] z-10 p-0.5 bg-zinc-100 rounded" src={org.cover} alt="Cover organization" /> : <Loading.Absolute className="rounded-md" title="" />} */}
 
-      {org.cover ?
-        <img className="w-full h-full p-1 rounded" src={org.cover} alt="Cover organization" /> : <Loading.Absolute className="rounded-md" title="" />}
+      {org.cover ? (
+        <img className="w-full h-full p-1 rounded" src={org.cover} alt="Cover organization" />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
+          <HiOutlineBuildingOffice className="w-5 h-5" />
+        </div>
+      )}
     </div>
     <div className="flex flex-col org-section-info">
       <span className="text-gray-700 dark:text-gray-400 text-sm truncate">{org.name ? org.name : <span className="h-2 bg-slate-200 dark:bg-slate-700 rounded animate-pulse text-transparent">No title</span>}</span>

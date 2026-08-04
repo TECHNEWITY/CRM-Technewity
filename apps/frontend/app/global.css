@@ -53,6 +53,10 @@
   }
 }
 
+[data-radix-popper-content-wrapper] {
+  z-index: 100 !important;
+}
+
 [data-radix-popper-content-wrapper] div {
   outline: none;
 }
@@ -87,8 +91,7 @@
 
 .root-sidebar {
   @apply h-screen border-r dark:bg-gray-900 dark:border-r-gray-800;
-  @apply hidden sm:flex items-start;
-  @apply transition-all;
+  @apply items-start transition-all;
 
   &.compact {
     width: var(--compact-width) !important;

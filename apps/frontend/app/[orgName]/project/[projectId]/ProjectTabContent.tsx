@@ -35,6 +35,10 @@ const Settings = dynamic(() => import('./settings'), {
   loading: () => <ProjectContentLoading />
 })
 
+const MindMap = dynamic(() => import('@/features/Project/MindMap'), {
+  loading: () => <ProjectContentLoading />
+})
+
 const Automation = dynamic(() => import('@/features/Automation'), {
   loading: () => <ProjectContentLoading />
 })
@@ -93,7 +97,7 @@ export default function ProjectTabContent() {
   const mode = searchParams.get('mode')
 
   const isIgnored = useCallback(() => {
-    const ignored = ['setting', 'automation', 'automation-create']
+    const ignored = ['setting', 'mindmap', 'automation', 'automation-create']
     return ignored.includes(mode || '')
   }, [mode])
 
@@ -134,6 +138,7 @@ export default function ProjectTabContent() {
       <AnimateView visible={isView(ProjectViewType.TEAM)}>
         <DynamicTeamView />
       </AnimateView>
+      {mode === 'mindmap' && <MindMap />}
       {mode === 'setting' && <Settings />}
       {mode === 'automation-create' ? <Automation /> : null}
       {mode === 'automation' ? <AutomateMenu /> : null}

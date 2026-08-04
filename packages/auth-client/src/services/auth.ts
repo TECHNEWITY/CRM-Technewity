@@ -15,12 +15,14 @@ export interface ISignin {
   email: string
   password: string
   provider?: 'GOOGLE' | 'EMAIL_PASSWORD'
+  rememberMe?: boolean
 }
 
 export const signin = ({
   email,
   password,
-  provider = 'EMAIL_PASSWORD'
+  provider = 'EMAIL_PASSWORD',
+  rememberMe = true
 }: ISignin) => {
   return httpPost('/api/auth/sign-in', { email, password, provider })
     .then(res => {
@@ -42,21 +44,24 @@ export const signin = ({
       const refreshToken = headers.refreshtoken
 
       console.log('cache goalie token')
-      saveGoalieToken(token)
+      saveGoalieToken(token, rememberMe)
       console.log('cache goalie refresh token')
-      saveGoalieRefreshToken(refreshToken)
+      saveGoalieRefreshToken(refreshToken, rememberMe)
 
       // const decodeJWT = decode(token) as GoalieUser
       const decodeRefreshToken = decode(refreshToken) as { exp: number }
 
       console.log('cache goalie user info')
-      saveGoalieUser({
-        id: data.id,
-        email: data.email,
-        name: data.name,
-        photo: data.photo,
-        exp: decodeRefreshToken.exp // it should be `refreshToken expired`
-      })
+      saveGoalieUser(
+        {
+          id: data.id,
+          email: data.email,
+          name: data.name,
+          photo: data.photo,
+          exp: decodeRefreshToken.exp // it should be `refreshToken expired`
+        },
+        rememberMe
+      )
 
       return Promise.resolve('SUCCESS')
     })

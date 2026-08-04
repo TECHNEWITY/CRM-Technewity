@@ -29,6 +29,7 @@ import IntroSection from '@/features/IntroSection'
 export default function SigninForm() {
   const { push } = useRouter()
   const [loading, setLoading] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
   const [email, setEmail] = useState('')
   const [isUserInactive, setIsUserInactive] = useState(false)
   const { setUser } = useUser()
@@ -45,7 +46,8 @@ export default function SigninForm() {
       submitHandler({
         email: values.email,
         password: values.password,
-        provider: 'EMAIL_PASSWORD'
+        provider: 'EMAIL_PASSWORD',
+        rememberMe
       })
     }
   })
@@ -164,6 +166,18 @@ export default function SigninForm() {
                 type="password"
                 {...regField('password')}
               />
+
+              <div className="flex items-center justify-between mt-1">
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 dark:text-gray-400 select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={e => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded text-indigo-600 border-gray-300 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800"
+                  />
+                  <span>Remember me</span>
+                </label>
+              </div>
 
               <div className="space-y-3 mt-2">
                 <Button

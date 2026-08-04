@@ -6,13 +6,28 @@ const GOALIE_JWT_TOKEN = 'GOALIE_JWT_TOKEN'
 const GOALIE_REFRESH_TOKEN = 'GOALIE_REFRESH_TOKEN'
 const GOALIE_ORG = 'GOALIE_ORG'
 
-export const saveGoalieOrg = (org: GoalieOrg) => {
-  localStorage.setItem(GOALIE_ORG, JSON.stringify(org))
+export const getStorage = (rememberMe?: boolean): Storage => {
+  if (typeof window === 'undefined') {
+    return { getItem: () => null, setItem: () => {}, removeItem: () => {} } as any
+  }
+  if (rememberMe === true) return window.localStorage
+  if (rememberMe === false) return window.sessionStorage
+  if (window.localStorage.getItem(GOALIE_JWT_TOKEN) || window.localStorage.getItem(GOALIE_USER)) {
+    return window.localStorage
+  }
+  if (window.sessionStorage.getItem(GOALIE_JWT_TOKEN) || window.sessionStorage.getItem(GOALIE_USER)) {
+    return window.sessionStorage
+  }
+  return window.localStorage
 }
 
-export const saveGoalieUser = (user: GoalieUser) => {
+export const saveGoalieOrg = (org: GoalieOrg, rememberMe?: boolean) => {
+  getStorage(rememberMe).setItem(GOALIE_ORG, JSON.stringify(org))
+}
+
+export const saveGoalieUser = (user: GoalieUser, rememberMe?: boolean) => {
   try {
-    window.localStorage.setItem(GOALIE_USER, JSON.stringify(user))
+    getStorage(rememberMe).setItem(GOALIE_USER, JSON.stringify(user))
   } catch (error) {
     return
   }
@@ -21,6 +36,7 @@ export const saveGoalieUser = (user: GoalieUser) => {
 export const clearGoalieUser = () => {
   try {
     window.localStorage.removeItem(GOALIE_USER)
+    window.sessionStorage.removeItem(GOALIE_USER)
   } catch (error) {
     return
   }
@@ -28,23 +44,24 @@ export const clearGoalieUser = () => {
 
 export const getGoalieUser = () => {
   try {
-    return JSON.parse(window.localStorage.getItem(GOALIE_USER) || '{}') as GoalieUser
+    const raw = getStorage().getItem(GOALIE_USER)
+    return JSON.parse(raw || '{}') as GoalieUser
   } catch (error) {
     return null
   }
 }
 
-export const saveGoalieToken = (token: string) => {
+export const saveGoalieToken = (token: string, rememberMe?: boolean) => {
   try {
-    localStorage.setItem(GOALIE_JWT_TOKEN, token)
+    getStorage(rememberMe).setItem(GOALIE_JWT_TOKEN, token)
   } catch (error) {
     console.log('jwt token not saved')
   }
 }
 
-export const saveGoalieRefreshToken = (token: string) => {
+export const saveGoalieRefreshToken = (token: string, rememberMe?: boolean) => {
   try {
-    localStorage.setItem(GOALIE_REFRESH_TOKEN, token)
+    getStorage(rememberMe).setItem(GOALIE_REFRESH_TOKEN, token)
   } catch (error) {
     console.log('refresh token not saved')
   }
@@ -53,7 +70,7 @@ export const saveGoalieRefreshToken = (token: string) => {
 export const isSessionExpired = () => {
   const now = Date.now()
   const decoded = getDecodeRefreshToken()
-  const exp = decoded.exp // it is refresh token expired time
+  const exp = decoded.exp
 
   return exp * 1000 < now
 }
@@ -64,9 +81,8 @@ export const isSessionStillAlive = () => {
 
 export const getDecodeRefreshToken = () => {
   try {
-    const decoded = decode(
-      localStorage.getItem(GOALIE_REFRESH_TOKEN) || ''
-    ) as { exp: number }
+    const token = getGoalieRefreshToken()
+    const decoded = decode(token || '') as { exp: number }
     return decoded ? decoded : { exp: 0 }
   } catch (error) {
     return { exp: 0 }
@@ -75,7 +91,7 @@ export const getDecodeRefreshToken = () => {
 
 export const getGoalieToken = () => {
   try {
-    return localStorage.getItem(GOALIE_JWT_TOKEN)
+    return getStorage().getItem(GOALIE_JWT_TOKEN)
   } catch (error) {
     return null
   }
@@ -83,7 +99,7 @@ export const getGoalieToken = () => {
 
 export const getGoalieRefreshToken = () => {
   try {
-    return localStorage.getItem(GOALIE_REFRESH_TOKEN)
+    return getStorage().getItem(GOALIE_REFRESH_TOKEN)
   } catch (error) {
     return null
   }
@@ -91,8 +107,10 @@ export const getGoalieRefreshToken = () => {
 
 export const clearAllGoalieToken = () => {
   try {
-    localStorage.removeItem(GOALIE_REFRESH_TOKEN)
-    localStorage.removeItem(GOALIE_JWT_TOKEN)
+    window.localStorage.removeItem(GOALIE_REFRESH_TOKEN)
+    window.localStorage.removeItem(GOALIE_JWT_TOKEN)
+    window.sessionStorage.removeItem(GOALIE_REFRESH_TOKEN)
+    window.sessionStorage.removeItem(GOALIE_JWT_TOKEN)
   } catch (error) {
     return null
   }
