@@ -30,7 +30,7 @@
   /* @apply space-y-3 h-full; */
   @apply overflow-x-hidden overflow-y-auto;
   @apply pb-8 pt-3;
-  height: calc(100vh - 168px);
+  height: calc(100dvh - 168px);
 }
 
 .board-item-container {

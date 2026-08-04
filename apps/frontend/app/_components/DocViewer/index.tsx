@@ -37,7 +37,7 @@ export default function DocViewer({ src, className }: { src: string, className?:
       <div
         id="doc-container"
         style={{
-          height: 'calc(100vh - 100px)'
+          height: 'calc(100dvh - 100px)'
         }}
       />
     </div>

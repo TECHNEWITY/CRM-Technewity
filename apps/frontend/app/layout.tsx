@@ -42,6 +42,7 @@ export default function RootLayout({
         <html lang="en">
           <head>
             <title>{process.env.NEXT_PUBLIC_APP_NAME || 'Technewity Labs'}</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
             <link rel="icon" href="/logo71x71.png" type="image/png" sizes="any" />
             <link rel="shortcut icon" href="/logo71x71.png" type="image/png" />
             <link rel="apple-touch-icon" href="/logo71x71.png" />

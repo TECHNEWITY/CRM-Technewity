@@ -26,7 +26,7 @@ export default function ProjectList() {
           </p>
         </div>
       </div>
-      <div style={{ height: `calc(100vh - 73px)` }}>
+      <div style={{ height: `calc(100dvh - 73px)` }}>
         <div className="px-5 sm:w-[1120px] mx-auto pt-8">
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-8">
             <ProjectAddModal

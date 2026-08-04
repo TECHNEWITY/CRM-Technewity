@@ -5,7 +5,7 @@
 }
 
 .week-view.calendar-wrapper {
-  height: calc(100vh - 181px);
+  height: calc(100dvh - 181px);
 }
 
 .calendar-week {
@@ -23,7 +23,7 @@
 }
 
 .week-view .calendar-day {
-  height: calc(100vh - 183px);
+  height: calc(100dvh - 183px);
 }
 
 .calendar-day .day-display {

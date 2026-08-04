@@ -15,7 +15,7 @@ function MultiActionInpDisplay({ onFieldChange }: MultiActionInpDisplayProps) {
     onFieldChange(value, fieldId, type)
   }
 
-  return <div className="grid grid-cols-2 gap-2 px-3 pb-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 138px)' }}>
+  return <div className="grid grid-cols-2 gap-2 px-3 pb-1 overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 138px)' }}>
     {customFields.map(field => {
       const fieldId = field.id
 

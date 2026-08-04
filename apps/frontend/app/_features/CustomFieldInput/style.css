@@ -78,5 +78,5 @@
 
 .cf-file-container .file-list-containers {
   @apply overflow-x-hidden overflow-y-auto;
-  max-height: calc(100vh - 384px)
+  max-height: calc(100dvh - 384px)
 }

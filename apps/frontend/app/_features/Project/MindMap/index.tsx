@@ -122,7 +122,7 @@ export default function MindMap() {
   return (
     <div
       className={`flex flex-col bg-white dark:bg-gray-900 border rounded-xl overflow-hidden shadow-sm transition-all ${
-        isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'w-full h-[calc(100vh-140px)]'
+        isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'w-full h-[calc(100dvh-140px)]'
       }`}>
       {/* Header bar */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-gray-800/80 border-b border-gray-200 dark:border-gray-700">

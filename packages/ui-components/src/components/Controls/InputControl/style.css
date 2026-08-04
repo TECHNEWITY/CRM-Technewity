@@ -49,6 +49,20 @@
   @apply py-2.5 px-3.5 text-base rounded-lg;
 }
 
+/* Prevent iOS Mobile Safari auto-zoom on input focus (requires min 16px font-size) */
+@media (max-width: 767px) {
+  .form-input,
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 
 
 

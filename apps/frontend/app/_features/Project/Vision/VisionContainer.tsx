@@ -7,7 +7,7 @@ export default function VisionContainer({ visible }: { visible: boolean }) {
     <div className={`vision relative ${visible ? '' : 'hidden'}`}>
       <div
         className="flex"
-        style={{ height: `calc(100vh - 98px)` }}>
+        style={{ height: `calc(100dvh - 98px)` }}>
         <VisionListTask />
         <VisionTimeline visible={true} />
       </div>

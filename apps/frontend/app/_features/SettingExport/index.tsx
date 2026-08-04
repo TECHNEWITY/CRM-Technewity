@@ -136,7 +136,7 @@ export default function SettingExport() {
       <ExportFilter data={tasks} />
       <div
         className="px-4 pt-3 overflow-y-auto"
-        style={{ height: `calc(100vh - 125px)` }}>
+        style={{ height: `calc(100dvh - 125px)` }}>
         <table className="table">
           <thead>
             <tr>

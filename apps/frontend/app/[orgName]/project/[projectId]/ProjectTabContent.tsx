@@ -112,7 +112,7 @@ export default function ProjectTabContent() {
   const cls = `relative ${isNotBoard ? 'overflow-y-auto' : null}`
 
   const view = useMemo(() => {
-    return <div className={cls} style={{ height: 'calc(100vh - 83px)' }}>
+    return <div className={cls} style={{ height: 'calc(100dvh - 83px)' }}>
       <ProjectTabContentLoading />
       <AnimateView visible={type === 'NONE' && !isIgnored()}>
         <TaskList />

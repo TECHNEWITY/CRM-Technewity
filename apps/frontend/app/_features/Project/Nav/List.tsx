@@ -90,7 +90,7 @@ function ProjectNavListContainer({ orgName }: { orgName: string }) {
   ]
 
 
-  return (<Scrollbar style={{ height: `calc(100vh - 141px)` }}>
+  return (<Scrollbar style={{ height: `calc(100dvh - 141px)` }}>
     <section className="side-nav">
       {menus.map((menu, mindex) => {
         const Icon = menu.icon

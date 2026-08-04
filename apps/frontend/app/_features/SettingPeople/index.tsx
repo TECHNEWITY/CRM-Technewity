@@ -9,7 +9,7 @@ export default function SettingPeopleContent() {
     <div
       className="overflow-y-auto pb-20 pt-20 custom-scrollbar"
       style={{
-        height: 'calc(100vh - 84px)'
+        height: 'calc(100dvh - 84px)'
       }}>
       <div className="w-[600px] mx-auto">
         <h2 className="text-gray-500 dark:text-gray-400 pb-3">{`Send an invitation via email here 👇`}</h2>

@@ -12,7 +12,7 @@ export default function SettingLayout({ children }: { children: ReactNode }) {
 
       <div
         className="task bg-indigo-50/50 dark:bg-[#182031] w-full"
-        style={{ height: `calc(100vh - 83px)` }}>
+        style={{ height: `calc(100dvh - 83px)` }}>
         {children}
       </div>
     </div>
