@@ -11,12 +11,15 @@ export default function ListCell({
   className?: string
   children: ReactNode
 }) {
-  const classes: string[] = ['list-cell']
-  align && classes.push(align)
+  const classes: string[] = ['list-cell shrink-0']
+  align && classes.push(`text-${align}`)
   className && classes.push(className)
   return (
-    <div className={classes.join(' ')} style={{ width }}>
+    <div
+      className={classes.join(' ')}
+      style={width ? { width: `${width}px` } : undefined}>
       {children}
     </div>
   )
 }
+

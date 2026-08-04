@@ -105,10 +105,6 @@
   }
 }
 
-.root-sidebar.compact + .main-content {
-  width: calc(100% - var(--compact-width)) !important;
-}
-
 .primary-sidebar {
   @apply flex flex-col justify-between h-screen border-r dark:border-r-gray-800;
 }
@@ -139,7 +135,7 @@
   }
 
   .secondary-sidebar .scroll-root {
-    height: calc(100vh - 150px) important;
+    height: calc(100vh - 150px) !important;
   }
 
   .create-project-btn {
@@ -169,26 +165,14 @@
     @apply h-[1px] w-[30px] mx-auto bg-gray-200 dark:bg-gray-800 py-0 my-2 rounded-none;
   }
 
-
   .side-nav .nav-item .right,  
   .side-nav .nav-item .left svg,
   .side-nav .nav-item .left span,
   .side-title span {
     @apply hidden;
   }
-
-  .main-content {
-    width: calc(100% - 61px) !important;
-  }
-
-  .main-content .board-container {
-    width: calc(100vw - 74px) !important;
-  }
 }
 
-.root-sidebar.compact + .main-content .board-container { 
-  width: calc(100vw - var(--compact-width)) !important;
-}
 
 .root-sidebar .main-nav-icon {
   @apply m-2 p-3 w-10 h-10 text-gray-400 rounded-lg cursor-pointer;

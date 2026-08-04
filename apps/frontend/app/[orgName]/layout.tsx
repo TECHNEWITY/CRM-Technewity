@@ -27,19 +27,19 @@ function OrgDetailContent({ children }: { children: ReactNode }) {
     return <Loading className='h-screen w-screen items-center justify-center' title='Fetching organization data ...' />
   }
 
-  return <>
-    <PrefetchOrgData />
-    <EventUserProjectUpdate />
-    <ProjectSidebar />
-    <Upsale />
-    <main
-      className="main-content w-full"
-      style={{ width: 'calc(100% - 251px)' }}>
-      <HamburgerMenu />
-      {children}
-    </main>
-    <GlobalTimerDisplay />
-  </>
+  return (
+    <div className="flex min-h-screen w-full overflow-x-hidden bg-gray-50 dark:bg-gray-950 relative">
+      <PrefetchOrgData />
+      <EventUserProjectUpdate />
+      <ProjectSidebar />
+      <Upsale />
+      <main className="main-content w-full flex-1 overflow-x-hidden min-h-screen flex flex-col min-w-0">
+        <HamburgerMenu />
+        {children}
+      </main>
+      <GlobalTimerDisplay />
+    </div>
+  )
 }
 
 // This will clear the global data as the org page unmount

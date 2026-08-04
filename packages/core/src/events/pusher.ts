@@ -1,17 +1,19 @@
 'use client'
 
-import Pusher from 'pusher-js'
+import Pusher, { Channel } from 'pusher-js'
 
-export const pusherClient = new Pusher(
-  process.env.NEXT_PUBLIC_PUSHER_CHANNEL_APP_KEY || '',
-  {
-    cluster: process.env.NEXT_PUBLIC_PUSHER_CHANNEL_APP_CLUSTER || '',
-    // channelAuthorization: {
-    //   transport: 'ajax',
-    //   endpoint: `${process.env.NEXT_PUBLIC_BE_GATEWAY}api/buzzer/channel-auth`
-    // }
+const key = process.env.NEXT_PUBLIC_PUSHER_CHANNEL_APP_KEY
+const cluster = process.env.NEXT_PUBLIC_PUSHER_CHANNEL_APP_CLUSTER
 
+export let pusherClient: Pusher | undefined
+export let channelTeamCollab: Channel | undefined
+
+if (key && cluster) {
+  try {
+    pusherClient = new Pusher(key, { cluster })
+    channelTeamCollab = pusherClient.subscribe('team-collab')
+  } catch (error) {
+    console.warn('Pusher client failed to initialize:', error)
   }
-)
+}
 
-export const channelTeamCollab = pusherClient.subscribe('team-collab')

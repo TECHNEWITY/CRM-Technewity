@@ -66,6 +66,14 @@ export default function DboardComponentList() {
     }
   }
 
+  const mobileLayout = components.map((component, idx) => ({
+    i: component.id,
+    x: 0,
+    y: idx * (component.height ?? 1),
+    w: 1,
+    h: component.height ?? 1
+  }))
+
   return (
     <div className="space-y-2 dashboard-component-list">
       <div className="flex justify-between items-center px-[10px]">
@@ -90,9 +98,9 @@ export default function DboardComponentList() {
 
       <ResponsiveGridLayout
         className="layout"
-        layouts={{ lg: layout }}
+        layouts={{ lg: layout, md: layout, sm: layout, xs: mobileLayout, xxs: mobileLayout }}
         breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-        cols={{ lg: 12, md: 12, sm: 12, xs: 12, xxs: 12 }}
+        cols={{ lg: 12, md: 12, sm: 6, xs: 1, xxs: 1 }}
         rowHeight={100}
         onLayoutChange={handleLayoutChange}
         isDraggable={true}

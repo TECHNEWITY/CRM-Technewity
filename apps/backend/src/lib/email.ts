@@ -41,7 +41,7 @@ export const sendEmail = async ({ emails, html, subject, text }: IEmailFields) =
       console.error('[Resend API Failure] Email was NOT delivered by Resend:', {
         to: emails,
         from: sender,
-        error: res.error
+        error: res?.error
       })
       return response
     }

@@ -19,9 +19,36 @@ const nextConfig = {
   }
 }
 
+/**
+ * @param {any} config
+ * @returns {any}
+ */
+const safeWithNx = (config) => {
+  const withNxFn = withNx(config)
+  /**
+   * @param {string} phase
+   * @param {any} context
+   */
+  return async (phase, context) => {
+    try {
+      return await withNxFn(phase, context)
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e)
+      console.warn('[Nx Plugin Warning] Failed to initialize withNx. Running in fallback mode:', message)
+      const { nx, ...rest } = config
+      return {
+        ...rest,
+        distDir: '.next'
+      }
+    }
+  }
+}
+
 const plugins = [
-  // Add more Next.js plugins to this list if needed.
-  withNx
+  safeWithNx
 ]
 
 module.exports = composePlugins(...plugins)(nextConfig)
+
+
+
