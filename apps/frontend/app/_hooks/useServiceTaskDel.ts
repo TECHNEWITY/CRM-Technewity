@@ -7,35 +7,46 @@ export const useServiceTaskDel = () => {
   const { projectId } = useParams()
   const { delTask, delTasks } = useTaskStore()
 
-  const updateLocalForageCache = (targetProjectId: string, deletedIds: string[]) => {
+  const updateLocalForageCache = async (targetProjectId: string, deletedIds: string[]) => {
     if (!targetProjectId) return
     const cacheKey = `TASKLIST_${targetProjectId}`
-    localforage.getItem<any[]>(cacheKey).then(cached => {
+    try {
+      const cached = await localforage.getItem<any[]>(cacheKey)
       if (cached && Array.isArray(cached)) {
         const updated = cached.filter(t => !deletedIds.includes(t.id))
-        localforage.setItem(cacheKey, updated)
+        await localforage.setItem(cacheKey, updated)
+      } else {
+        await localforage.removeItem(cacheKey)
       }
-    }).catch(() => {})
+    } catch {
+      await localforage.removeItem(cacheKey).catch(() => {})
+    }
   }
 
-  const deleteTask = (id: string, customProjectId?: string) => {
+  const deleteTask = async (id: string, customProjectId?: string) => {
     const targetProjId = (customProjectId || projectId || '') as string
     console.log('delete task called', id, targetProjId)
     delTask(id)
-    updateLocalForageCache(targetProjId, [id])
+    await updateLocalForageCache(targetProjId, [id])
+    if (targetProjId) {
+      await localforage.removeItem(`TASKLIST_${targetProjId}`).catch(() => {})
+    }
 
-    taskDelete({
+    return taskDelete({
       projectId: targetProjId,
       id
     })
   }
 
-  const deleteMultiTask = (ids: string[], customProjectId?: string) => {
+  const deleteMultiTask = async (ids: string[], customProjectId?: string) => {
     const targetProjId = (customProjectId || projectId || '') as string
     delTasks(ids)
-    updateLocalForageCache(targetProjId, ids)
+    await updateLocalForageCache(targetProjId, ids)
+    if (targetProjId) {
+      await localforage.removeItem(`TASKLIST_${targetProjId}`).catch(() => {})
+    }
 
-    taskDeletes({
+    return taskDeletes({
       projectId: targetProjId,
       ids
     })

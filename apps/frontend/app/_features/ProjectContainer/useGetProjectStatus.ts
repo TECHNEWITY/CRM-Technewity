@@ -21,6 +21,7 @@ export const useGetStatusHandler = (projectId: string, cb?: () => void) => {
 
         if (status !== 200) {
           addAllStatuses([])
+          localforage.removeItem(key)
           return
         }
 
@@ -30,7 +31,11 @@ export const useGetStatusHandler = (projectId: string, cb?: () => void) => {
         // unless re-ordering feature in setting/status and view/board will be error
         const sortedStatus = statuses.sort((a, b) => a.order - b.order)
         addAllStatuses(sortedStatus)
-        setCache(sortedStatus)
+
+        // Wipe first then write fresh — prevents deleted statuses surviving stale Redis
+        localforage.removeItem(key).then(() => {
+          localforage.setItem(key, sortedStatus)
+        })
       })
       .catch(err => {
         console.log(err)

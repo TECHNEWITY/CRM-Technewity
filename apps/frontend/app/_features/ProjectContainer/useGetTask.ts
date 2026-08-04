@@ -79,11 +79,15 @@ export const useGetTaskHandler = () => {
         return
       }
 
-      localforage.setItem(key, data)
-      setTimeout(() => {
-        addAllTasks(data)
-        setTaskLoading(false)
-      }, 300)
+      // Always wipe localforage first, then write fresh server data.
+      // This prevents a stale cache from surviving if the previous fetch
+      // returned deleted items (Redis cache not yet cleared).
+      localforage.removeItem(key).then(() => {
+        localforage.setItem(key, data)
+      })
+
+      addAllTasks(data)
+      setTaskLoading(false)
     }).catch(err => {
       if (axios.isCancel(err)) return
       console.error(err)
