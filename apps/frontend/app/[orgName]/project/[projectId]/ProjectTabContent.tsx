@@ -72,14 +72,16 @@ function AnimateView({
 }
 
 function ProjectTabContentLoading() {
-
   const { loading } = useProjectViewStore()
   const { statusLoading } = useProjectStatusStore()
 
   if (loading || statusLoading) {
-    return <div className="px-3">
-      <Loading.Absolute title="Preparing view ..." enabled={true} />
-    </div>
+    return (
+      <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-center py-1.5 px-3 bg-indigo-50/90 dark:bg-indigo-950/90 border-b border-indigo-100 dark:border-indigo-900 text-indigo-600 dark:text-indigo-300 text-xs font-medium shadow-sm transition-all animate-pulse">
+        <div className="w-3.5 h-3.5 border-2 border-indigo-600 border-t-transparent dark:border-indigo-400 dark:border-t-transparent rounded-full animate-spin mr-2" />
+        <span>Preparing view...</span>
+      </div>
+    )
   }
 
   return null

@@ -46,10 +46,10 @@ function ProjectSidebarContainer() {
       <aside
         className={`${sidebarClasses} ${
           visible
-            ? 'fixed inset-y-0 left-0 z-50 flex shadow-2xl sm:static sm:z-auto sm:shadow-none'
+            ? 'fixed inset-y-0 left-0 z-50 flex w-[280px] max-w-[85vw] shadow-2xl bg-white dark:bg-gray-900 sm:static sm:z-auto sm:w-auto sm:shadow-none'
             : 'hidden sm:flex'
         }`}>
-        <nav className="secondary-sidebar flex flex-col h-full relative">
+        <nav className="secondary-sidebar flex flex-col h-full w-full relative bg-white dark:bg-gray-900 overflow-y-auto">
           {/* Mobile close button */}
           <button
             type="button"
