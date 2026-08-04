@@ -3,6 +3,7 @@ import { authMiddleware, beProjectMemberMiddleware } from '../../middlewares'
 import { AuthRequest } from '../../types'
 import {
   mdTaskGetAll,
+  mdTaskGetOne,
   mdTaskUpdate,
   mdTaskAddMany,
   mdProjectGet,
