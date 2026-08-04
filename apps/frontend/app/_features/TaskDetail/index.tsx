@@ -32,6 +32,7 @@ import MultiMemberPicker from '@/components/MultiMemberPicker'
 import TimeTracker from '@/features/TimeTracker'
 import TimerHistory from '../TimeTracker/TimerHistory'
 import TimerButton from '../TimeTracker/TimerButton'
+import TaskDeleteAction from '../TaskActions/TaskDeleteAction'
 
 export const defaultFormikValues: ITaskDefaultValues = {
   title: '',
@@ -160,8 +161,13 @@ export default function TaskDetail({
       className="task-form space-y-3 gap-6 relative">
       {cover ? <TaskCover url={cover || ''} /> : null}
       <div className="">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <TimerButton taskId={id} />
+          </div>
+          <TaskDeleteAction id={id} />
+        </div>
         <div className="mb-2 flex items-center gap-2">
-          <TimerButton taskId={id} />
           <h2
             onClick={() => {
               setTitleVisible(false)

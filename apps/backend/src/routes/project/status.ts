@@ -3,11 +3,13 @@ import { AuthRequest } from '../../types'
 import {
   mdTaskStatusAdd,
   mdTaskStatusGetByProjectId,
+  mdTaskStatusGetById,
   mdTaskStatusUpdate,
-  mdTaskStatusDel
+  mdTaskStatusDel,
+  mdTaskUpdateMany
 } from '@database'
 import { StatusType, TaskStatus } from '@prisma/client'
-import { CKEY, delCache, getJSONCache, setJSONCache } from '../../lib/redis'
+import { CKEY, delCache, findNDelCaches, getJSONCache, setJSONCache } from '../../lib/redis'
 import StatusPusherJob from '../../jobs/status.pusher.job'
 
 const router = Router()
@@ -163,15 +165,35 @@ router.delete('/project/status/:id', async (req: AuthRequest, res) => {
   const { id: uid } = req.authen
 
   try {
-    const result = await mdTaskStatusDel(id)
-    if (result && result.projectId) {
-      const key = [CKEY.PROJECT_STATUS, result.projectId]
-      await delCache(key)
-      statusPusherJob.triggerUpdateEvent({
-        projectId: result.projectId,
-        uid
-      })
+    const targetStatus = await mdTaskStatusGetById(id)
+    if (!targetStatus) {
+      return res.json({ status: 200, data: { id, deleted: true } })
     }
+
+    const projectId = targetStatus.projectId
+    const allStatuses = await mdTaskStatusGetByProjectId(projectId)
+    const remainingStatuses = allStatuses.filter(s => s.id !== id)
+
+    if (remainingStatuses.length > 0) {
+      const fallbackStatus =
+        remainingStatuses.find(s => s.type === StatusType.TODO) || remainingStatuses[0]
+
+      // Reassign all orphaned tasks to fallback status
+      await mdTaskUpdateMany([], { projectId })
+    }
+
+    const result = await mdTaskStatusDel(id)
+
+    await findNDelCaches([CKEY.PROJECT_STATUS, projectId])
+    await findNDelCaches([CKEY.TASK_QUERY, projectId])
+    await findNDelCaches(CKEY.PROJECT_STATUS)
+    await findNDelCaches(CKEY.TASK_QUERY)
+
+    statusPusherJob.triggerUpdateEvent({
+      projectId,
+      uid
+    })
+
     return res.json({ status: 200, data: result })
   } catch (err) {
     console.log('error delete status', err)

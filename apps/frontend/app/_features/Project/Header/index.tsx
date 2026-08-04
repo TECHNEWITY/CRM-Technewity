@@ -1,29 +1,79 @@
+import { useState, useEffect } from 'react'
 import ProjectMemberView from "@/features/ProjectMember/View"
 import { useProjectStore } from "@/store/project"
+import { projectUpdate } from "@/services/project"
+import { HiOutlinePencilSquare, HiOutlineCheck } from "react-icons/hi2"
+import { messageError, messageSuccess } from "@ui-components"
 
 export default function ProjectHeader() {
-  const { selectedProject } = useProjectStore(state => state)
-  return <h2 className="text-xl pb-2 sm:pb-0 dark:text-gray-200 font-bold px-4 pt-2 flex items-center justify-between">
-    <div className="flex items-center gap-2 mb-1">
-      {/* <Link */}
-      {/*   href={`${params.orgID}/project`} */}
-      {/*   className="hidden sm:inline-block p-2 border rounded-md bg-white text-sm text-gray-500 hover:bg-gray-50 dark:bg-slate-900 dark:border-gray-700 dark:hover:bg-slate-800"> */}
-      {/*   <AiOutlineArrowLeft /> */}
-      {/* </Link> */}
+  const { selectedProject, updateProject } = useProjectStore(state => state)
+  const [isEditing, setIsEditing] = useState(false)
+  const [name, setName] = useState('')
 
-      {selectedProject?.icon ? (
-        <img
-          alt={selectedProject.icon}
-          src={selectedProject?.icon || ''}
-          className="w-6 h-6"
-        />
-      ) : null}
-      {selectedProject?.name || (
-        <span className="text-transparent animate-pulse h-7 bg-gray-100 dark:bg-gray-700 rounded-md">
-          Project
-        </span>
-      )}
-    </div>
-    <ProjectMemberView />
-  </h2>
+  useEffect(() => {
+    if (selectedProject?.name) {
+      setName(selectedProject.name)
+    }
+  }, [selectedProject?.name])
+
+  const handleSave = async () => {
+    if (!selectedProject || !name.trim()) return
+    const trimmed = name.trim()
+    setIsEditing(false)
+    updateProject({ id: selectedProject.id, name: trimmed })
+    try {
+      await projectUpdate({ id: selectedProject.id, name: trimmed })
+      messageSuccess('Project renamed successfully!')
+    } catch (err) {
+      messageError('Failed to rename project')
+    }
+  }
+
+  return (
+    <h2 className="text-xl pb-2 sm:pb-0 dark:text-gray-200 font-bold px-4 pt-2 flex items-center justify-between">
+      <div className="flex items-center gap-2 mb-1 group">
+        {selectedProject?.icon ? (
+          <img
+            alt={selectedProject.icon}
+            src={selectedProject?.icon || ''}
+            className="w-6 h-6"
+          />
+        ) : null}
+
+        {isEditing ? (
+          <div className="flex items-center gap-1.5">
+            <input
+              type="text"
+              className="px-2 py-0.5 text-lg font-bold border rounded dark:bg-gray-800 dark:border-gray-700 outline-none focus:ring-2 focus:ring-indigo-500"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') handleSave()
+                if (e.key === 'Escape') setIsEditing(false)
+              }}
+              autoFocus
+            />
+            <button
+              onClick={handleSave}
+              className="p-1 text-green-600 hover:text-green-700 rounded hover:bg-green-50 dark:hover:bg-green-950">
+              <HiOutlineCheck className="w-5 h-5" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span>{selectedProject?.name || 'Project'}</span>
+            {selectedProject?.id ? (
+              <button
+                onClick={() => setIsEditing(true)}
+                title="Rename Project"
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-indigo-600 rounded">
+                <HiOutlinePencilSquare className="w-4 h-4" />
+              </button>
+            ) : null}
+          </div>
+        )}
+      </div>
+      <ProjectMemberView />
+    </h2>
+  )
 }

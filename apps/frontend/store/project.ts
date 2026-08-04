@@ -85,20 +85,13 @@ export const useProjectStore = create<ProjectState>(set => ({
         const { id, ...rest } = data
         const project = state.projects.find(p => p.id === id)
 
-        if (!project) {
-          return
+        if (project) {
+          Object.assign(project, rest)
         }
 
-        const { icon, projectViewId } = rest
-
-        if (icon) {
-          project.icon = icon
+        if (state.selectedProject && state.selectedProject.id === id) {
+          Object.assign(state.selectedProject, rest)
         }
-
-        if (projectViewId) {
-          project.projectViewId = projectViewId
-        }
-
       })
     ),
 
