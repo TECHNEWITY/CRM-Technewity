@@ -184,12 +184,20 @@ const generateConditions = ({
   return where
 }
 
-export const mdTaskDelete = (id: string) => {
-  return taskModel.delete({
-    where: {
-      id
-    }
-  })
+export const mdTaskDelete = async (id: string) => {
+  try {
+    return await taskModel.delete({
+      where: {
+        id
+      }
+    })
+  } catch (error) {
+    return await taskModel.deleteMany({
+      where: {
+        id
+      }
+    })
+  }
 }
 
 export const mdTaskDeleteMany = async (ids: string[]) => {
