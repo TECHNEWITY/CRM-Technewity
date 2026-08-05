@@ -8,6 +8,7 @@ const { composePlugins, withNx } = require('@nx/next')
  **/
 const nextConfig = {
   output: 'standalone',
+  optimizeFonts: false,
   nx: {
     // Set this to true if you would like to use SVGR
     // See: https://github.com/gregberge/svgr

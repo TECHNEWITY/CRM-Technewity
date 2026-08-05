@@ -14,9 +14,9 @@ export const generateToken = (payload: object) => {
   return sign(payload, SECRET_KEY, { expiresIn: TOKEN_EXPIRED });
 };
 
-export const generateRefreshToken = (payload: object) => {
-  console.log('REFRESH_EXPIRED', REFRESH_EXPIRED, typeof REFRESH_EXPIRED)
-  return sign(payload, REFRESH_KEY, { expiresIn: REFRESH_EXPIRED });
+export const generateRefreshToken = (payload: object, expiresIn: string = REFRESH_EXPIRED || '4h') => {
+  console.log('REFRESH_EXPIRED', expiresIn, typeof expiresIn)
+  return sign(payload, REFRESH_KEY, { expiresIn });
 };
 
 export const extractToken = (token: string) => {

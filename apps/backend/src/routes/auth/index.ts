@@ -30,6 +30,7 @@ router.post('/sign-in', async (req, res) => {
   try {
     const body = req.body as Pick<User, 'email' | 'password'> & {
       provider: 'GOOGLE' | 'EMAIL_PASSWORD'
+      rememberMe?: boolean
     }
 
     const isEmailPasswordProvider = body.provider === 'EMAIL_PASSWORD'
@@ -58,12 +59,15 @@ router.post('/sign-in', async (req, res) => {
     await authProvider.verify()
     const user = authProvider.getUser()
 
-    const jwtProvider = new JwtProvider({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      photo: user.photo
-    })
+    const jwtProvider = new JwtProvider(
+      {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        photo: user.photo
+      },
+      body.rememberMe
+    )
 
     sendDiscordLog(`${user.email} - ${user.name} just signed in`)
 

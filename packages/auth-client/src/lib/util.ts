@@ -1,10 +1,19 @@
-import { decode } from 'jsonwebtoken'
+import { jwtDecode } from 'jwt-decode'
 import { GoalieOrg, GoalieUser } from '../types'
 
-const GOALIE_USER = 'GOALIE_USER'
-const GOALIE_JWT_TOKEN = 'GOALIE_JWT_TOKEN'
-const GOALIE_REFRESH_TOKEN = 'GOALIE_REFRESH_TOKEN'
-const GOALIE_ORG = 'GOALIE_ORG'
+export const GOALIE_USER = 'GOALIE_USER'
+export const GOALIE_JWT_TOKEN = 'GOALIE_JWT_TOKEN'
+export const GOALIE_REFRESH_TOKEN = 'GOALIE_REFRESH_TOKEN'
+export const GOALIE_ORG = 'GOALIE_ORG'
+
+export const decodeJwtPayload = <T = any>(token: string): T | null => {
+  try {
+    if (!token) return null
+    return jwtDecode<T>(token)
+  } catch (error) {
+    return null
+  }
+}
 
 export const getStorage = (rememberMe?: boolean): Storage => {
   if (typeof window === 'undefined') {
@@ -72,7 +81,7 @@ export const isSessionExpired = () => {
   const decoded = getDecodeRefreshToken()
   const exp = decoded.exp
 
-  return exp * 1000 < now
+  return exp * 1000 + 30000 < now
 }
 
 export const isSessionStillAlive = () => {
@@ -82,7 +91,7 @@ export const isSessionStillAlive = () => {
 export const getDecodeRefreshToken = () => {
   try {
     const token = getGoalieRefreshToken()
-    const decoded = decode(token || '') as { exp: number }
+    const decoded = decodeJwtPayload<{ exp: number }>(token || '')
     return decoded ? decoded : { exp: 0 }
   } catch (error) {
     return { exp: 0 }

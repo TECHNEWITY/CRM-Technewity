@@ -61,7 +61,8 @@ export default function SigninForm() {
       submitHandler({
         email: user.email || '',
         password: idToken,
-        provider: 'GOOGLE'
+        provider: 'GOOGLE',
+        rememberMe
       })
     } catch (error) {
       console.log(error)

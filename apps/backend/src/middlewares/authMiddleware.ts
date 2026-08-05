@@ -59,7 +59,10 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
       console.log('token is invalid, but refresh token is valid');
       console.log('re-generate new token vs refresh token');
       const user = decodeToken(authorization) as JWTPayload;
-      console.log('user infor', user);
+      const decodedRefresh = decodeToken(refreshToken) as { email: string; rememberMe?: boolean };
+      const rememberMe = decodedRefresh?.rememberMe ?? false;
+
+      console.log('user infor', user, 'rememberMe', rememberMe);
       const token = generateToken({
         id: user.id,
         email: user.email,
@@ -68,14 +71,19 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
       });
       console.log('generated token');
 
-      const refreshToken = generateRefreshToken({
-        email: user.email
-      });
+      const refreshExpiry = rememberMe ? '30d' : (process.env.JWT_REFRESH_EXPIRED || '4h');
+      const newRefreshToken = generateRefreshToken(
+        {
+          email: user.email,
+          rememberMe
+        },
+        refreshExpiry
+      );
 
       console.log('generated refresh token');
 
       res.setHeader('Authorization', token);
-      res.setHeader('RefreshToken', refreshToken);
+      res.setHeader('RefreshToken', newRefreshToken);
 
       console.log('genereated succesfully');
 

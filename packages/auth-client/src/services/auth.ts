@@ -24,7 +24,7 @@ export const signin = ({
   provider = 'EMAIL_PASSWORD',
   rememberMe = true
 }: ISignin) => {
-  return httpPost('/api/auth/sign-in', { email, password, provider })
+  return httpPost('/api/auth/sign-in', { email, password, provider, rememberMe })
     .then(res => {
       const { status, data } = res.data
       const { headers } = res

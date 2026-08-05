@@ -1,10 +1,13 @@
 import {
   clearAllGoalieToken,
+  decodeJwtPayload,
   getGoalieRefreshToken,
   getGoalieToken,
   isSessionExpired,
   saveGoalieRefreshToken,
-  saveGoalieToken
+  saveGoalieToken,
+  GOALIE_JWT_TOKEN,
+  GOALIE_REFRESH_TOKEN
 } from '@auth-client'
 import { messageError } from '@ui-components'
 import axios from 'axios'
@@ -42,8 +45,14 @@ instance.interceptors.response.use(
 
     // console.log('override token', authorization, refreshtoken)
     if (authorization && refreshtoken) {
-      saveGoalieToken(authorization)
-      saveGoalieRefreshToken(refreshtoken)
+      const decoded = decodeJwtPayload<{ rememberMe?: boolean }>(refreshtoken)
+      let rememberMe = decoded?.rememberMe
+      if (typeof rememberMe === 'undefined' && typeof window !== 'undefined') {
+        rememberMe = !!window.localStorage.getItem(GOALIE_JWT_TOKEN) || !!window.localStorage.getItem(GOALIE_REFRESH_TOKEN)
+      }
+
+      saveGoalieToken(authorization, rememberMe)
+      saveGoalieRefreshToken(refreshtoken, rememberMe)
       // console.log('override done')
     }
     return config
