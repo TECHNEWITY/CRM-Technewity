@@ -3,6 +3,7 @@ import { Avatar, Popover } from '@ui-components'
 import ThemeSelection from './ThemeSelection'
 import { HiOutlineChevronUp, HiOutlineCog, HiOutlineCog6Tooth, HiOutlineUser, HiOutlineUserPlus } from 'react-icons/hi2'
 import Link from 'next/link'
+import { useParams } from 'next/navigation'
 import { IoMdLogOut } from 'react-icons/io'
 import { TbUserCircle } from 'react-icons/tb'
 import { HiOutlineColorSwatch, HiOutlineDotsVertical } from 'react-icons/hi'
@@ -10,6 +11,8 @@ import { AiOutlineCloudDownload } from 'react-icons/ai'
 
 export default function UserSection() {
   const { user } = useUser()
+  const params = useParams()
+  const orgName = (params?.orgName as string) || ''
 
   const menus = [
     {
@@ -19,7 +22,7 @@ export default function UserSection() {
     },
     {
       icon: HiOutlineCog6Tooth,
-      link: `/${user?.organization?.slug || 'default'}/setting/people`,
+      link: `/${orgName || 'organization'}/setting/people`,
       title: 'Settings'
     },
     {
