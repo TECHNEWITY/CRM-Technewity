@@ -109,4 +109,20 @@
   @apply bg-indigo-50/50 text-gray-400;
   @apply dark:bg-gray-800;
 }
+
+/* Mobile Calendar Scroll (< 768px) */
+@media (max-width: 767px) {
+  .calendar-wrapper {
+    overflow-x: auto !important;
+    width: 100% !important;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .calendar-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+  .calendar-week {
+    min-width: 600px !important;
+  }
+}
 /* Copy from components/calendar/style.css */

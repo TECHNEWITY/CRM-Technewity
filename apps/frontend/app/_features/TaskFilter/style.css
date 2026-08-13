@@ -41,3 +41,24 @@
   @apply w-6 h-6 cursor-pointer text-gray-500 dark:text-gray-400 border rounded-md px-1 py-0.5;
   @apply dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer;
 }
+
+/* Mobile Task Filter Rules (< 768px) */
+@media (max-width: 767px) {
+  .task-filter {
+    padding: 0.5rem 0.75rem !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+  .task-filter-actions {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    padding-bottom: 0.25rem !important;
+    width: 100% !important;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .task-filter-actions::-webkit-scrollbar {
+    display: none;
+  }
+}
