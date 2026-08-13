@@ -51,26 +51,28 @@ export default function SettingPeopleInvitation() {
   }
 
   return (
-    <FormGroup className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
-      <Form.Input
-        value={email}
-        disabled={loading}
-        onChange={ev => {
-          setEmail(ev.target.value)
-        }}
-        onEnter={() => {
-          sendInvitation()
-        }}
-        className="w-full sm:w-72"
-        placeholder="user@email.com"
-      />
-      <Button
-        loading={loading}
-        onClick={sendInvitation}
-        leadingIcon={<HiOutlineMail />}
-        title="Let's invite"
-        className="w-full sm:w-auto"
-      />
-    </FormGroup>
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
+      <FormGroup>
+        <Form.Input
+          value={email}
+          disabled={loading}
+          onChange={ev => {
+            setEmail(ev.target.value)
+          }}
+          onEnter={() => {
+            sendInvitation()
+          }}
+          className="w-full sm:w-72"
+          placeholder="user@email.com"
+        />
+        <Button
+          loading={loading}
+          onClick={sendInvitation}
+          leadingIcon={<HiOutlineMail />}
+          title="Let's invite"
+          className="w-full sm:w-auto"
+        />
+      </FormGroup>
+    </div>
   )
 }
