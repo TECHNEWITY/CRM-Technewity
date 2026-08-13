@@ -91,3 +91,15 @@
 .btn.btn-danger[disabled] {
   @apply bg-red-400/70 border-red-300 opacity-90;
 }
+
+/* Touch Targets on Mobile (< 768px) */
+@media (max-width: 767px) {
+  .btn {
+    min-height: 44px;
+  }
+  .btn.notitle {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+  }
+}

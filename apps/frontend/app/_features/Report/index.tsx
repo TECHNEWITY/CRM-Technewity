@@ -18,7 +18,7 @@ export default function Report() {
     <ReportProvider>
       <PrefetchData />
       <ReportHeader />
-      <div className='report-container flex items-start gap-3'>
+      <div className='report-container flex flex-col md:flex-row items-start gap-3'>
         <ReportContent />
         <ReportSidebar />
       </div>

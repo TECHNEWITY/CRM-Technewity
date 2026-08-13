@@ -26,7 +26,7 @@ function BoardItemCover({ cover }: { cover: string | null }) {
 
   return (
     <div className="max-h-60 -mx-3 bg-gray-50 dark:bg-gray-800 -mt-3 mb-2 rounded-t-md overflow-hidden">
-      <img alt="task cover" src={cover} />
+      <img alt="task cover" src={cover} loading="lazy" />
     </div>
   )
 }

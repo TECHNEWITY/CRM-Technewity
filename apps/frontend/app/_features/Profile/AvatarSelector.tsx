@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { IoCheckmarkCircle } from 'react-icons/io5';
+import Image from 'next/image';
 
 interface AvatarSelectorProps {
   onSelect: (avatarPath: string) => void;
@@ -35,8 +36,6 @@ export default function AvatarSelector({ onSelect, currentAvatar }: AvatarSelect
     '/avatars/female-10.png',
     '/avatars/female-11.png',
     '/avatars/female-12.png',
-    
-
   ];
 
   const handleSelect = (avatar: string) => {
@@ -58,9 +57,11 @@ export default function AvatarSelector({ onSelect, currentAvatar }: AvatarSelect
             }`}
             onClick={() => handleSelect(avatar)}
           >
-            <img 
+            <Image 
               src={avatar} 
               alt={`Avatar option ${index + 1}`} 
+              width={48}
+              height={48}
               className="w-12 h-12 object-cover rounded-full"
             />
             {(selectedAvatar === avatar || (!selectedAvatar && currentAvatar === avatar)) && (

@@ -24,3 +24,12 @@
 .dropdown-item[data-disabled] {
   @apply opacity-50;
 }
+
+/* Mobile Touch Targets (< 768px) */
+@media (max-width: 767px) {
+  .dropdown-item {
+    min-height: 44px !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+}

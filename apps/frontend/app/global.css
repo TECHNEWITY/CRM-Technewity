@@ -352,3 +352,31 @@
 .aside-content main form {
   @apply w-full space-y-4 bg-white dark:bg-gray-900/70 px-6 py-8 border rounded-lg dark:border-gray-700 shadow-md shadow-indigo-100 dark:shadow-gray-900;
 }
+
+/* Mobile Touch Targets (< 768px) */
+@media (max-width: 767px) {
+  .btn-icon,
+  .project-tab-action,
+  .table td button,
+  .table td a,
+  .table td [role="button"] {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0.5rem !important;
+  }
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-width: 24px;
+    min-height: 24px;
+  }
+  .aside-content {
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+  }
+  .aside-menu {
+    width: 100% !important;
+  }
+}

@@ -54,3 +54,15 @@
 .task-tab-section .tab-trigger:first-child {
   padding-left: 0px;
 }
+
+/* Mobile Task Detail Layout (< 768px) */
+@media (max-width: 767px) {
+  .task-info-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  .task-info-label {
+    width: 100% !important;
+  }
+}

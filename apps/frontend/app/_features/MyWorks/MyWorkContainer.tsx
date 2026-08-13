@@ -30,7 +30,7 @@ export default function MyworkContainer() {
       }}>
       <div id="my-work">
         <div className="py-4 sm:py-[15px] bg-white dark:bg-gray-900 border-b dark:border-gray-800">
-          <div className="sm:w-[1120px] mx-4 px-4 sm:mx-auto">
+          <div className="w-full max-w-[1120px] sm:w-[1120px] px-4 sm:mx-auto">
             <h2 className="text-gray-600 dark:text-gray-300 font-bold text-xl">
               My works board
             </h2>
@@ -44,7 +44,7 @@ export default function MyworkContainer() {
         <div
           className="bg-indigo-50/50 dark:bg-[#182031] overflow-y-auto"
           style={{ height: 'calc(100dvh - 79px)' }}>
-          <div className="sm:w-[1120px] sm:mx-auto pt-5 px-4 sm:pt-10 grid grid-cols-1 sm:grid-cols-4 gap-6">
+          <div className="w-full max-w-[1120px] sm:w-[1120px] sm:mx-auto pt-4 md:pt-10 px-4 grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 col-span-3 sm:gap-6">
               <div>
                 <MyUrgentTasks />

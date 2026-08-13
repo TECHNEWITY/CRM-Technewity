@@ -82,7 +82,7 @@ export default function ProjectNavItem({
       title={name}>
       <div className="left">
         <GoDot className="ml-0.5 text-gray-400 dark:text-gray-500 shrink-0" />
-        <img className="w-5 h-5" src={icon || ''} />
+        <img className="w-5 h-5" src={icon || ''} loading="lazy" alt="" />
         <span className="whitespace-nowrap truncate">{name}</span>
         {showBadges()}
       </div>

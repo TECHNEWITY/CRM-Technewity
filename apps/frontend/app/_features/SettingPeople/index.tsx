@@ -11,9 +11,9 @@ export default function SettingPeopleContent() {
       style={{
         height: 'calc(100dvh - 84px)'
       }}>
-      <div className="w-[600px] mx-auto">
+      <div className="w-full max-w-[600px] px-4 md:px-0 md:w-[600px] mx-auto">
         <h2 className="text-gray-500 dark:text-gray-400 pb-3">{`Send an invitation via email here 👇`}</h2>
-        <div className='flex items-center justify-between'>
+        <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3'>
 
           <SettingPeopleInvitation />
           <CreateNewMember />

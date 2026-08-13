@@ -16,7 +16,7 @@ export default function ProjectList() {
   return (
     <div className="bg-indigo-50/50 dark:bg-[#182031]">
       <div className="bg-white py-[15px] border-b dark:bg-gray-900 dark:border-gray-700">
-        <div className="px-5 sm:w-[1120px] mx-auto">
+        <div className="px-4 sm:px-5 w-full sm:w-[1120px] mx-auto">
           <h2 className="text-gray-600 dark:text-gray-300 font-bold text-xl">
             Your projects
           </h2>
@@ -27,8 +27,8 @@ export default function ProjectList() {
         </div>
       </div>
       <div style={{ height: `calc(100dvh - 73px)` }}>
-        <div className="px-5 sm:w-[1120px] mx-auto pt-8">
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-8">
+        <div className="px-4 sm:px-5 w-full sm:w-[1120px] mx-auto pt-4 md:pt-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-8">
             <ProjectAddModal
               triggerComponent={
                 <div className="project-item bg-indigo-50 border-dashed">

@@ -56,7 +56,7 @@ const TeamView = () => {
   return (
     <>
       <TaskFilter />
-      <div className="grid grid-cols-4 gap-4 w-[1200px] mx-auto mt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-[1200px] px-4 md:px-0 md:w-[1200px] mx-auto mt-4">
         {columns.map((column, index) => {
           return (
             <div key={index} className="space-y-4">

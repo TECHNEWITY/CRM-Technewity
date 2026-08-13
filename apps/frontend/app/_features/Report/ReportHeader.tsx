@@ -122,18 +122,14 @@ function ReportHeaderDuration() {
 export default function ReportHeader() {
 
   return <div className='report-header'>
-    <div className="report-container">
+    <div className="report-container flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <h2 className="text-lg font-medium">Summary report</h2>
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <ReportHeaderTimeFilter />
           <ReportHeaderDuration />
         </div>
         <div>
-          {/* <FormGroup> */}
-          {/*   <Button title="Separate" size="sm" /> */}
-          {/*   <Button title="Group" size="sm" /> */}
-          {/* </FormGroup> */}
         </div>
       </div>
     </div>

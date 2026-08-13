@@ -12,6 +12,8 @@ import { setLocalCache } from '@namviek/core/client'
 import Upsale from '@/features/UpsaleDialog'
 import GlobalTimerDisplay from '@/features/TimeTracker/GlobalTimerDisplay'
 
+import MobileBottomNav from '../_components/MobileBottomNav'
+
 // NOTE: do not move these following function inside ProjectLayout
 // cuz it causes a re-render to the entire component
 // why ? because it contains useParams inside, and this will triggered as url updated
@@ -33,10 +35,11 @@ function OrgDetailContent({ children }: { children: ReactNode }) {
       <EventUserProjectUpdate />
       <ProjectSidebar />
       <Upsale />
-      <main className="main-content w-full flex-1 overflow-x-hidden min-h-screen flex flex-col min-w-0">
+      <main className="main-content w-full flex-1 overflow-x-hidden min-h-screen flex flex-col min-w-0 pb-[65px] md:pb-0">
         <HamburgerMenu />
         {children}
       </main>
+      <MobileBottomNav />
       <GlobalTimerDisplay />
     </div>
   )

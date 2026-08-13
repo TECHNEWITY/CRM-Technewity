@@ -25,7 +25,7 @@ export default function SettingAboutContent() {
 
   const Content = asides[active].content
 
-  return <div className="pt-12 w-[900px] ml-12">
+  return <div className="pt-4 md:pt-12 w-full max-w-[900px] px-4 md:px-0 ml-0 md:ml-12 md:w-[900px]">
     <div className="org">
       <div className="aside-content">
         <aside className="aside-menu">

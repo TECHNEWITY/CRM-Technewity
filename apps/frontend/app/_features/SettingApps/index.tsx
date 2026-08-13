@@ -4,7 +4,7 @@ import CreateApplication from './CreateApplication'
 
 export default function SettingAppsContainer() {
   return (
-    <div className="pt-24 mx-auto w-[700px] space-y-4">
+    <div className="pt-8 md:pt-24 mx-auto w-full max-w-[700px] px-4 md:px-0 md:w-[700px] space-y-4">
       <div className='flex items-center justify-between'>
         <h2 className='text-2xl font-bold'>Applications</h2>
         <CreateApplication />

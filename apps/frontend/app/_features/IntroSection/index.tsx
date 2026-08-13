@@ -6,13 +6,13 @@ import './index.css'
 
 export default function IntroSection() {
 
-  return <div className="intro-section overflow-hidden pt-14 w-full shrink-0 dark:bg-gray-900 px-32 flex flex-col">
+  return <div className="intro-section overflow-hidden pt-14 w-full shrink-0 dark:bg-gray-900 px-4 md:px-32 flex flex-col">
 
     <h2 className='mt-[95px] text-[42px] font-extrabold leading-tight text-white sign-text-shadow'>Technewity Labs <br />Enterprise Workspace</h2>
 
     <p className="text-[19px] mt-6 text-[#CCE1FB] sign-text-shadow">Streamline team collaboration, project management, and <br />automated workflows for your organization.</p>
 
-    <img src="/sign-background-cover1.png" className="w-[1100px] mt-7 -ml-[60px]" style={{ maxWidth: 'initial' }} />
+    <img src="/sign-background-cover1.png" className="w-full max-w-full md:w-[1100px] mt-7 ml-0 md:-ml-[60px]" />
 
     <div className="flex items-center gap-2">
       <Link href={'https://technewity.com'} target="_blank">

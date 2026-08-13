@@ -34,14 +34,14 @@ export default function RootPage() {
   return (
     <div className="w-screen h-screen bg-white">
       <div className="w-full h-[200px] bg-indigo-500"></div>
-      <div className="w-[900px] m-auto -mt-[140px]">
+      <div className="w-full max-w-[900px] px-4 md:px-0 md:w-[900px] m-auto -mt-[140px]">
         <h2 className="font-bold text-2xl text-white">Your organizations</h2>
         <p className="text-indigo-200 text-sm mt-2">
           Select one for work. Next time, we will redirect you to the last
           selected organization.
         </p>
 
-        <div className="grid grid-cols-3 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6">
           <Link href={`/organization/create`}>
             <div className="box flex h-[100px] gap-3 items-center justify-center cursor-pointer hover:border-indigo-300 text-indigo-800">
               <AiOutlinePlus className="w-5 h-5 -ml-4" />
