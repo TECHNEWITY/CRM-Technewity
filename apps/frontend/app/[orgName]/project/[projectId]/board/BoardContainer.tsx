@@ -98,7 +98,7 @@ export default function BoardContainer() {
       {/* Mobile Stage Selector Tabs (< md) */}
       <div className="block md:hidden px-4 py-3 border-b bg-white dark:bg-gray-900 dark:border-gray-800">
         <Tabs.Root value={currentTab} onValueChange={setActiveMobileTab}>
-          <Tabs.List className="flex gap-2 overflow-x-auto custom-scrollbar pb-1">
+          <Tabs.List className="flex gap-2 overflow-x-auto mobile-stage-tabs pb-1">
             {visibleGroups.map(group => (
               <Tabs.Trigger
                 key={group.id}
