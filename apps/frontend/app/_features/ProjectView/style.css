@@ -79,3 +79,40 @@
   @apply bg-gray-100 dark:bg-gray-800 rounded-r-md;
   @apply py-4 px-8 w-full border-l dark:border-gray-700;
 }
+
+/* Mobile Project Tab Bar Scroll & Touch Isolation (< 768px) */
+@media (max-width: 767px) {
+  .project-tab-bar-mobile {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-x: contain !important;
+    overscroll-behavior-y: auto !important;
+    touch-action: pan-x !important;
+    width: 100% !important;
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .project-tab-bar-mobile::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+  .project-view {
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  .project-view-item {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+  .project-advance-tabs {
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  .project-advance-tabs .tab-item {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+}

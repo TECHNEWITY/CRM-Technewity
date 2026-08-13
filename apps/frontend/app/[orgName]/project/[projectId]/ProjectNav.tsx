@@ -13,9 +13,11 @@ export default function ProjectNav() {
     <div className="project-nav">
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <ProjectHeader />
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between px-2 py-1 gap-2 overflow-x-auto mobile-stage-tabs">
-          <ProjectView />
-          <ProjectAdvanceTabs />
+        <div className="project-tab-bar-mobile flex items-center justify-between w-full px-2 py-1 border-t sm:border-t-0 dark:border-gray-800">
+          <div className="flex items-center shrink-0">
+            <ProjectView />
+            <ProjectAdvanceTabs />
+          </div>
         </div>
       </div>
 

@@ -78,3 +78,16 @@
 .selected-item {
   @apply inline-flex border bg-gray-50 py-1.5 px-2 rounded-md text-xs;
 }
+
+/* Mobile Filter Pill X-Icon Removal (< 768px) */
+@media (max-width: 767px) {
+  .select-clear-icon {
+    display: none !important;
+  }
+  .select-button {
+    padding-right: 1.75rem !important;
+  }
+  .select-button.sm {
+    padding-right: 1.5rem !important;
+  }
+}
