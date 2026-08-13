@@ -6,6 +6,7 @@ import ProjectList from '@/features/Project/Nav/index'
 import {
   HiOutlineBriefcase,
   HiOutlineChartPie,
+  HiOutlineCog6Tooth,
   HiOutlineServerStack,
   HiOutlineVideoCamera,
 } from 'react-icons/hi2'
@@ -81,12 +82,12 @@ function ProjectNavListContainer({ orgName }: { orgName: string }) {
       icon: HiOutlineChartPie,
       active: pathname.includes(`${orgName}/report`)
     },
-    // {
-    //   title: 'Settings',
-    //   href: `/${orgName}/setting/people`,
-    //   icon: HiOutlineCog6Tooth,
-    //   active: pathname.includes(`${orgName}/setting`)
-    // }
+    {
+      title: 'Settings',
+      href: `/${orgName}/setting/people`,
+      icon: HiOutlineCog6Tooth,
+      active: pathname.includes(`${orgName}/setting`)
+    }
   ]
 
 

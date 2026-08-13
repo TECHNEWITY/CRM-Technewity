@@ -18,6 +18,11 @@ export default function UserSection() {
       title: 'Update profile'
     },
     {
+      icon: HiOutlineCog6Tooth,
+      link: `/${user?.organization?.slug || 'default'}/setting/people`,
+      title: 'Settings'
+    },
+    {
       icon: IoMdLogOut,
       link: `/sign-out`,
       title: 'Log out'

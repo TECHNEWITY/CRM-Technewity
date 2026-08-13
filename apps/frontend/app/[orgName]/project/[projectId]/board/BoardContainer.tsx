@@ -127,7 +127,7 @@ export default function BoardContainer() {
         <Droppable droppableId="all-columns" direction="horizontal" type="column">
           {provided => (
             <div
-              className="board-container flex-1 overflow-x-auto overflow-y-auto custom-scrollbar p-3 md:p-4 flex flex-col md:flex-row gap-4 w-full"
+              className="board-container flex-1 overflow-x-auto overflow-y-auto custom-scrollbar p-2 md:p-4 flex flex-col md:flex-row gap-4 w-full"
               {...provided.droppableProps}
               ref={provided.innerRef}>
               {visibleGroups.map((group, groupIndex) => {

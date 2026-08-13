@@ -137,51 +137,53 @@ export default function SettingExport() {
       <div
         className="px-4 pt-3 overflow-y-auto"
         style={{ height: `calc(100dvh - 125px)` }}>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>#</th>
-              {columns.map(col => {
+        <div className="overflow-x-auto w-full">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>#</th>
+                {columns.map(col => {
+                  return (
+                    <th className="" key={col.name}>
+                      {col.title}
+                    </th>
+                  )
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {tasks.map((task, index) => {
+                const projectId = task.projectId
                 return (
-                  <th className="" key={col.name}>
-                    {col.title}
-                  </th>
+                  <tr key={task.id}>
+                    <td className="text-center">{index + 1}</td>
+                    {columns.map(col => {
+                      const key = col.name as keyof ITaskExport
+                      const align = col.name === 'title' ? '' : 'text-center'
+                      let value = task[key]
+                      if (col.name === 'type') {
+                        value = value || TaskType.TASK
+                      }
+                      return (
+                        <td className={`${align}`} key={col.name}>
+                          {key === 'projectName' ? (
+                            <Link
+                              className="text-indigo-500 hover:underline"
+                              href={`${orgName}/project/${projectId}?mode=task`}>
+                              {value}
+                            </Link>
+                          ) : (
+                            value
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
                 )
               })}
-            </tr>
-          </thead>
-          <tbody>
-            {tasks.map((task, index) => {
-              const projectId = task.projectId
-              return (
-                <tr key={task.id}>
-                  <td className="text-center">{index + 1}</td>
-                  {columns.map(col => {
-                    const key = col.name as keyof ITaskExport
-                    const align = col.name === 'title' ? '' : 'text-center'
-                    let value = task[key]
-                    if (col.name === 'type') {
-                      value = value || TaskType.TASK
-                    }
-                    return (
-                      <td className={`${align}`} key={col.name}>
-                        {key === 'projectName' ? (
-                          <Link
-                            className="text-indigo-500 hover:underline"
-                            href={`${orgName}/project/${projectId}?mode=task`}>
-                            {value}
-                          </Link>
-                        ) : (
-                          value
-                        )}
-                      </td>
-                    )
-                  })}
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

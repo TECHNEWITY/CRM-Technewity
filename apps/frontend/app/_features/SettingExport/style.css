@@ -10,3 +10,26 @@
 .export-filter .filter-actions .form-input {
   @apply border-none shadow-none text-xs;
 }
+
+/* Mobile Export Filter (< 768px) */
+@media (max-width: 767px) {
+  .export-filter {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 0.75rem 1rem !important;
+    gap: 0.5rem !important;
+  }
+  .export-filter .filter-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+  .export-filter .filter-actions .form-group {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+  .export-filter .filter-actions .list-preset {
+    width: 100% !important;
+  }
+}

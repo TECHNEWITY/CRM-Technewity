@@ -91,30 +91,38 @@ function MeetingRoomInfo() {
     return `${window.location.protocol}//${window.location.host}/${orgID}/meeting/${roomId}`
   }
 
-  return <div className={`fixed bottom-5 left-5 bg-white rounded-md shadow-lg p-4 text-gray-600 text-sm`}>
-    <HiOutlineInformationCircle onClick={() => {
-      setVisible(true)
-    }} className={`cursor-pointer ${visible ? 'hidden' : ''}`} />
-    <div className={`relative w-[400px] ${visible ? '' : 'hidden'}`}>
-      <HiOutlineX className='cursor-pointer w-7 h-7 p-1 rounded-md absolute top-1 right-1 border bg-gray-100' onClick={() => setVisible(false)} />
-      <h2 className='text-2xl text-gray-800 mb-2'>Your meeting is ready</h2>
-      <div className='space-y-2'>
-        <p>Share this link with others you want in the meeting</p>
+  return (
+    <div className="fixed bottom-20 left-3 right-3 sm:bottom-5 sm:left-5 sm:right-auto bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-md shadow-lg p-4 text-gray-600 dark:text-gray-300 text-sm z-50">
+      <HiOutlineInformationCircle
+        onClick={() => {
+          setVisible(true)
+        }}
+        className={`cursor-pointer ${visible ? 'hidden' : ''}`}
+      />
+      <div className={`relative w-full max-w-full sm:w-[400px] ${visible ? '' : 'hidden'}`}>
+        <HiOutlineX
+          className="cursor-pointer w-7 h-7 p-1 rounded-md absolute top-1 right-1 border bg-gray-100 dark:bg-gray-800 dark:border-gray-700"
+          onClick={() => setVisible(false)}
+        />
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Your meeting is ready</h2>
+        <div className="space-y-2">
+          <p>Share this link with others you want in the meeting</p>
 
-        <div className='relative'>
-          <Form.Input readOnly value={getLink()} />
-          <HiOutlineDuplicate
-            onClick={() => {
-              copyToClipboard(getLink())
-              messageSuccess('Copied to clipboard already !')
-            }}
-            className='absolute top-2 right-2 p-1 w-6 h-6 hover:border-gray-900 cursor-pointer bg-white border rounded-md shadow' />
+          <div className="relative">
+            <Form.Input readOnly value={getLink()} className="w-full pr-10" />
+            <HiOutlineDuplicate
+              onClick={() => {
+                copyToClipboard(getLink())
+                messageSuccess('Copied to clipboard already !')
+              }}
+              className="absolute top-2 right-2 p-1 w-6 h-6 hover:border-gray-900 cursor-pointer bg-white dark:bg-gray-800 border rounded-md shadow"
+            />
+          </div>
+          <p className="text-xs text-gray-500">People who use this meeting link must get your permission before they can join</p>
         </div>
-        <p>People who use this meeting link must get your permission before they can join </p>
       </div>
     </div>
-  </div>
-
+  )
 }
 
 function MyVideoConference() {
