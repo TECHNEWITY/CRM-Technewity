@@ -91,9 +91,9 @@ NEXT_PUBLIC_DISABLE_REGISTRATION=0
 MONGODB_URL=mongodb+srv://<user>:<password>@cluster.mongodb.net/technewity?retryWrites=true&w=majority
 REDIS_HOST=rediss://<user>:<pass>@shining-anchovy-172866.upstash.io:6379
 
-# Authentication Secrets
-JWT_SECRET_KEY=12GUY3N76U21d4IJ
-JWT_REFRESH_KEY=7us9s88o121ieeuo
+# Authentication Secrets (Generate 48-byte random strings)
+JWT_SECRET_KEY=your_secure_jwt_secret_key_here
+JWT_REFRESH_KEY=your_secure_jwt_refresh_key_here
 JWT_TOKEN_EXPIRED=30m
 JWT_REFRESH_EXPIRED=4h
 

@@ -105,8 +105,8 @@ connectPubClient((err, redis) => {
 |NEXT_PUBLIC_BE_GATEWAY|http://localhost:3333/|Backend api url|✔️|
 |NEXT_PUBLIC_APP_NAME|Technewity Labs|App name|✔️|
 |MONGODB_URL|mongodb+srv://<user>:<pass>@<host>/<db>?retryWrites=true&w=majority|Database uri|✔️|
-|JWT_SECRET_KEY|12GUY3N76U21d4IJ|Secret key|✔️|
-|JWT_REFRESH_KEY|7us9s88o121ieeuo|Refresh key|✔️|
+|JWT_SECRET_KEY|<random_high_entropy_secret>|Secret key|✔️|
+|JWT_REFRESH_KEY|<random_high_entropy_secret>|Refresh key|✔️|
 |JWT_VERIFY_USER_LINK_TOKEN_EXPIRED|1h|Expired time|✔️|
 |JWT_TOKEN_EXPIRED|30m|Expired time|✔️|
 |JWT_REFRESH_EXPIRED|4h|Expired time|✔️|

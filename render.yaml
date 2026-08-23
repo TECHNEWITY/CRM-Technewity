@@ -19,7 +19,7 @@ services:
   - key: JWT_TOKEN_EXPIRED
     value: 30m
   - key: JWT_SECRET_KEY
-    value: 12GUY3N76U21d4IJ
+    sync: false
   - key: RESEND_TOKEN
     sync: false
   - key: RESEND_EMAIL_DOMAIN
@@ -43,7 +43,7 @@ services:
   - key: LIVEKIT_API_SECRET
     sync: false
   - key: JWT_REFRESH_KEY
-    value: 7us9s88o121ieeuo
+    sync: false
   - key: JWT_REFRESH_EXPIRED
     value: 4h
   - key: AI_PROVIDER
