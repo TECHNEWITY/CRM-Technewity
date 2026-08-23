@@ -37,10 +37,10 @@ const COMMAND_BUBBLES: CommandBubble[] = [
     id: 'task',
     label: '/Task',
     command: '/Task @bot ',
-    hint: 'Create a structured task record with assignees & lead',
+    hint: 'Create a structured task with priority, due date, points & checklist',
     icon: '📋',
     color: 'indigo',
-    template: '/Task @bot Write blog post for product launch. Keep it concise. lead: @'
+    template: '/Task @bot Write blog post for launch. priority: high due: friday points: 3 #marketing lead: @'
   },
   {
     id: 'bug',
@@ -49,7 +49,43 @@ const COMMAND_BUBBLES: CommandBubble[] = [
     hint: 'Report an issue or defect with auto-prioritization',
     icon: '🐛',
     color: 'rose',
-    template: '/Bug @bot 500 server error when uploading invoice PDF'
+    template: '/Bug @bot 500 server error when uploading invoice PDF priority: urgent'
+  },
+  {
+    id: 'feature',
+    label: '/Feature',
+    command: '/Feature @bot ',
+    hint: 'Request a new capability or feature',
+    icon: '✨',
+    color: 'purple',
+    template: '/Feature @bot Add Dark Mode switch to user settings due: next week #ui'
+  },
+  {
+    id: 'improvement',
+    label: '/Improvement',
+    command: '/Improvement @bot ',
+    hint: 'Log an enhancement or optimization to an existing feature',
+    icon: '⚡',
+    color: 'emerald',
+    template: '/Improvement @bot Optimize dashboard loading speed by caching queries'
+  },
+  {
+    id: 'report',
+    label: '/Report',
+    command: '/Report @bot ',
+    hint: 'Generate weekly/monthly project progress report and member stats',
+    icon: '📊',
+    color: 'indigo',
+    template: '/Report @bot weekly summary'
+  },
+  {
+    id: 'schedule',
+    label: '/Schedule',
+    command: '/Schedule @bot ',
+    hint: 'Set up an automated recurring cron action (e.g. weekly report or overdue alerts)',
+    icon: '⏰',
+    color: 'amber',
+    template: '/Schedule @bot send weekly report every monday at 9am'
   },
   {
     id: 'email',
@@ -58,23 +94,7 @@ const COMMAND_BUBBLES: CommandBubble[] = [
     hint: 'Draft & dispatch an outbound email via AI',
     icon: '✉️',
     color: 'amber',
-    template: '/Email @bot Send project weekly summary report to '
-  },
-  {
-    id: 'lead',
-    label: 'lead: @Name',
-    command: 'lead: @',
-    hint: 'Specify the accountable lead for the created task',
-    icon: '👤',
-    color: 'emerald'
-  },
-  {
-    id: 'bot',
-    label: '@bot',
-    command: '@bot ',
-    hint: 'Mention AI bot for freeform task conversion or questions',
-    icon: '✨',
-    color: 'purple'
+    template: '/Email @bot Send project update summary to '
   }
 ]
 

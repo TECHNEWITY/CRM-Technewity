@@ -13,12 +13,25 @@ export const getGeminiClient = (): GoogleGenerativeAI => {
   return genAI
 }
 
+export type TBotIntent =
+  | 'TASK'
+  | 'BUG'
+  | 'FEATURE'
+  | 'IMPROVEMENT'
+  | 'REPORT'
+  | 'SCHEDULE'
+  | 'EMAIL'
+  | 'UNCLEAR'
+
 export interface ITaskParseResult {
-  intent: 'TASK' | 'BUG' | 'EMAIL' | 'UNCLEAR'
+  intent: TBotIntent
   title: string
   rephrased_description: string
   email_subject?: string
   email_body?: string
+  report_duration?: string
+  schedule_action_type?: 'SEND_REPORT' | 'NOTIFY_OVERDUE'
+  schedule_every?: string
 }
 
 /**
@@ -67,7 +80,7 @@ export const parseTaskWithGemini = async ({
   memberNames
 }: {
   rawText: string
-  commandHint?: 'TASK' | 'BUG' | 'EMAIL' | null
+  commandHint?: TBotIntent | null
   memberNames: string[]
 }): Promise<ITaskParseResult> => {
   return withRetry(async () => {
@@ -82,15 +95,17 @@ export const parseTaskWithGemini = async ({
           properties: {
             intent: {
               type: SchemaType.STRING,
-              description: 'The classified intent, must be strictly one of: TASK, BUG, EMAIL, or UNCLEAR.'
+              description:
+                'The classified intent, must be strictly one of: TASK, BUG, FEATURE, IMPROVEMENT, REPORT, SCHEDULE, EMAIL, or UNCLEAR.'
             },
             title: {
               type: SchemaType.STRING,
-              description: 'A crisp, actionable title (5-10 words maximum) summarizing the task or email.'
+              description: 'A crisp, actionable title (5-10 words maximum) summarizing the task, report, schedule, or email.'
             },
             rephrased_description: {
               type: SchemaType.STRING,
-              description: 'A professionally rephrased, clean description of what needs to be done. Keep all domain constraints.'
+              description:
+                'A professionally rephrased, clean description of what needs to be done. Keep all domain constraints.'
             },
             email_subject: {
               type: SchemaType.STRING,
@@ -99,6 +114,18 @@ export const parseTaskWithGemini = async ({
             email_body: {
               type: SchemaType.STRING,
               description: 'Email content body in clear HTML or text if sending an email.'
+            },
+            report_duration: {
+              type: SchemaType.STRING,
+              description: 'Duration for report requests (e.g., "weekly", "monthly", or date range).'
+            },
+            schedule_action_type: {
+              type: SchemaType.STRING,
+              description: 'Supported action type for recurring schedule: SEND_REPORT or NOTIFY_OVERDUE.'
+            },
+            schedule_every: {
+              type: SchemaType.STRING,
+              description: 'Frequency for recurring schedule (e.g. "mon", "tue", "day", "weekday", "hour").'
             }
           },
           required: ['intent', 'title', 'rephrased_description']
@@ -108,16 +135,24 @@ export const parseTaskWithGemini = async ({
 
     const systemInstruction = `
 You are an expert CRM assistant for a project management system.
-Your job is to parse raw chat messages into structured task/bug records or email dispatches.
+Your job is to parse raw chat messages into structured task/bug/feature/improvement records, project reports, scheduled recurring actions, or email dispatches.
 ${commandHint ? `Note: The user explicitly prefixed a slash command: /${commandHint}. Treat the intent as ${commandHint} unless completely contradictory.` : ''}
 
 Project Members for reference: ${memberNames.join(', ')}.
 
 Guidelines:
-1. Rephrase free-form colloquial instructions into professional, clear, and structured descriptions (e.g., retaining specifics like dietary, technical, or marketing constraints).
+1. Rephrase free-form colloquial instructions into professional, clear, and structured descriptions.
 2. Create a punchy, actionable title.
-3. If the user says "email this to <address/person>" or "mail the report to ...", classify intent as EMAIL, provide an appropriate email_subject and clean email_body.
-4. If ambiguous or completely nonsensical, set intent to UNCLEAR.
+3. Classify intent accurately:
+   - TASK: General work items (/Task)
+   - BUG: Defect or problem reports (/Bug)
+   - FEATURE: New features or capabilities (/Feature, /NewFeature)
+   - IMPROVEMENT: Enhancements to existing features (/Improvement, /Enhance)
+   - REPORT: Project status or progress reports (/Report)
+   - SCHEDULE: Recurring automated actions (/Schedule, "every Monday at 9am...")
+   - EMAIL: Direct outbound email requests (/Email)
+4. If the user says "email this to <address/person>" or "mail the report to ...", provide appropriate email_subject and clean email_body.
+5. If ambiguous or completely nonsensical, set intent to UNCLEAR.
 `
 
     const prompt = `${systemInstruction}\n\nUser Message:\n"""\n${rawText}\n"""`

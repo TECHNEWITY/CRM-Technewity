@@ -65,6 +65,7 @@
     "bcryptjs": "^2.4.3",
     "bson": "^6.9.0",
     "bullmq": "^5.1.4",
+    "chrono-node": "^2.10.1",
     "cors": "^2.8.5",
     "date-fns": "^2.30.0",
     "docx-preview": "^0.3.3",
