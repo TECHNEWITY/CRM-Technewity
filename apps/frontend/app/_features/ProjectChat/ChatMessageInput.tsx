@@ -203,11 +203,23 @@ export default function ChatMessageInput({
     const readyFileIds = attachedFiles.filter((f) => f.id && !f.uploading).map((f) => f.id!)
 
     const mentionIds: string[] = []
+    // 1. Extract from data-id attributes
     const regex = /data-id="([a-f0-9]+|BOT_USER)"/gi
     let match
     while ((match = regex.exec(contentToSend)) !== null) {
       if (match[1] && !mentionIds.includes(match[1])) {
         mentionIds.push(match[1])
+      }
+    }
+
+    // 2. Also match any @Name in text against known members
+    const cleanText = contentToSend.replace(/<[^>]*>/g, ' ')
+    for (const item of mentionItems) {
+      if (item.id === 'BOT_USER' || !item.label) continue
+      const escaped = item.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const namePattern = new RegExp(`@${escaped}(?!\\w)`, 'i')
+      if (namePattern.test(cleanText) && !mentionIds.includes(item.id)) {
+        mentionIds.push(item.id)
       }
     }
 
@@ -363,14 +375,20 @@ export default function ChatMessageInput({
           onRephrase={handleRephrase}
           onCtrlEnter={(v) => handleSubmit(v)}
           extensions={[
-            Mention.extend({
-              addAttributes() {
-                return this.parent && this.parent instanceof Function
-                  ? { ...this.parent(), value: { default: '' } }
-                  : {}
-              }
-            }).configure({
+            Mention.configure({
               HTMLAttributes: { class: 'mention' },
+              renderHTML({ options, node }) {
+                return [
+                  'span',
+                  {
+                    class: 'mention',
+                    'data-type': 'mention',
+                    'data-id': node.attrs.id,
+                    'data-label': node.attrs.label
+                  },
+                  `@${node.attrs.label ?? node.attrs.id}`
+                ]
+              },
               suggestion: Form.getMentionSuggestion(mentionItems)
             })
           ]}

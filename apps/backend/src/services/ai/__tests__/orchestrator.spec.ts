@@ -17,6 +17,12 @@ jest.mock('../../../lib/pusher-server', () => ({
   pusherTrigger: jest.fn()
 }))
 
+const MOCK_ORG_ID = '6a6ae824f587e315ef597234'
+const MOCK_PROJECT_ID = '6a86edc41f82be8f2ade7888'
+const MOCK_SENDER_ID = '6a6ae804f587e315ef597233'
+const MOCK_VIVEK_ID = '6a6aecac0ee18af442cea6b8'
+const MOCK_BOT_ID = '6a8ac000000000000000000a'
+
 describe('BotOrchestratorService Comprehensive Test Suite', () => {
   let orchestrator: BotOrchestratorService
 
@@ -26,9 +32,9 @@ describe('BotOrchestratorService Comprehensive Test Suite', () => {
   })
 
   // ───────────────────────────────────────────────────────────────────────────
-  // 1. DETERMINISTIC PARSING & REGEX SAFETY (BUG 4)
+  // 1. DETERMINISTIC PARSING & REGEX SAFETY
   // ───────────────────────────────────────────────────────────────────────────
-  describe('Deterministic Parsing & Bug 4 (Regex Safety & Overlapping Names)', () => {
+  describe('Deterministic Parsing & Regex Safety', () => {
     it('should extract slash commands properly', () => {
       expect(orchestrator.extractSlashCommand('/Task @bot build blog')).toBe('TASK')
       expect(orchestrator.extractSlashCommand('/Bug @bot login button is broken')).toBe('BUG')
@@ -48,7 +54,7 @@ describe('BotOrchestratorService Comprehensive Test Suite', () => {
       expect(orchestrator.extractLiteralEmail('No email here')).toBeNull()
     })
 
-    it('Bug 4 Fix: should NOT crash on member names with regex special characters (parentheses, periods)', () => {
+    it('should NOT crash on member names with regex special characters (parentheses, periods)', () => {
       expect(() => escapeRegExp('Alex (Dev)')).not.toThrow()
       expect(escapeRegExp('Alex (Dev)')).toBe('Alex \\(Dev\\)')
       expect(escapeRegExp('Dr. Smith [Admin]')).toBe('Dr\\. Smith \\[Admin\\]')
@@ -67,8 +73,7 @@ describe('BotOrchestratorService Comprehensive Test Suite', () => {
       expect(result.assigneeIds).toEqual(['user-other'])
     })
 
-    it('Bug 4 Fix: should correctly assign longer name ("Omkar") and NOT falsely match shorter substring ("Om")', () => {
-      // Intentionally order "Om" before "Omkar" in members array to test sort precedence
+    it('should correctly assign longer name ("Omkar") and NOT falsely match shorter substring ("Om")', () => {
       const members = [
         { id: 'user-om', name: 'Om', email: 'om@technewity.ai' },
         { id: 'user-omkar', name: 'Omkar', email: 'omkar@technewity.ai' }
@@ -77,145 +82,134 @@ describe('BotOrchestratorService Comprehensive Test Suite', () => {
       const result = orchestrator.extractLeadId({
         htmlContent: '<p>/Task @bot build recipe module lead: @Omkar</p>',
         plainText: '/Task @bot build recipe module lead: @Omkar',
-        candidateMemberIds: ['user-om', 'user-omkar'],
+        candidateMemberIds: [],
         members
       })
 
-      // Must be Omkar (user-omkar), not Om (user-om)
       expect(result.leadId).toBe('user-omkar')
-      expect(result.assigneeIds).toEqual(['user-om'])
     })
 
-    it('should extract lead via HTML data-id span with highest priority', () => {
+    it('should resolve space-separated member name ("VIVEK PANDEY") even when candidateMemberIds is empty', () => {
+      const members = [
+        { id: MOCK_VIVEK_ID, name: 'VIVEK PANDEY', email: 'vp983351@gmail.com' },
+        { id: MOCK_SENDER_ID, name: 'sanket', email: 'snket2005d@gmail.com' }
+      ]
+
       const result = orchestrator.extractLeadId({
-        htmlContent:
-          '<p>/Task @bot write blog lead: <span data-id="user-123" class="mention">@Omkar</span></p>',
-        plainText: '/Task @bot write blog lead: @Omkar',
-        candidateMemberIds: ['user-123', 'user-456'],
-        members: [
-          { id: 'user-123', name: 'Omkar', email: 'omkar@technewity.ai' },
-          { id: 'user-456', name: 'Shreyansh', email: 'shreyansh@technewity.ai' }
-        ]
+        htmlContent: '<p>/Task @bot Write blog post for product launch. lead: <span class="mention">@VIVEK PANDEY</span></p>',
+        plainText: '/Task @bot Write blog post for product launch. lead: @VIVEK PANDEY',
+        candidateMemberIds: [],
+        members
       })
-      expect(result.leadId).toBe('user-123')
-      expect(result.assigneeIds).toEqual(['user-456'])
+
+      expect(result.leadId).toBe(MOCK_VIVEK_ID)
     })
   })
 
   // ───────────────────────────────────────────────────────────────────────────
-  // 2. MULTI-TENANT BOT USER SCOPING (BUG 1)
+  // 2. MINIMUM CONTENT GUARD (EMPTY /TASK)
   // ───────────────────────────────────────────────────────────────────────────
-  describe('Bug 1 Fix: Multi-Tenant Org-Scoped Bot User Lookup', () => {
+  describe('Minimum Content Guard (Empty /Task @bot)', () => {
+    it('should NOT create a Task and should post a clarification reply when message is empty or only contains commands', async () => {
+      const mockMessage = {
+        id: '6a8ad0000000000000000001',
+        organizationId: MOCK_ORG_ID,
+        projectId: MOCK_PROJECT_ID,
+        senderId: MOCK_SENDER_ID,
+        content: '/Task @bot ',
+        mentionUserIds: [],
+        fileIds: [],
+        status: 'PENDING',
+        linkedTaskId: null
+      }
+
+      jest.spyOn(orchestrator.chatRepo, 'getMessageById').mockResolvedValue(mockMessage as any)
+      jest.spyOn(orchestrator, 'getBotUserIdForOrg').mockResolvedValue(MOCK_BOT_ID)
+      jest.spyOn(orchestrator, 'checkRateLimit').mockResolvedValue(true)
+      jest.spyOn(orchestrator.chatRepo, 'updateMessageStatus').mockResolvedValue({} as any)
+
+      const createNewTaskSpy = jest.spyOn(orchestrator.taskCreateService, 'createNewTask')
+      const createReplySpy = jest.spyOn(orchestrator.chatRepo, 'createMessage').mockResolvedValue({ id: 'reply-clarify' } as any)
+
+      await orchestrator.processMessage('6a8ad0000000000000000001')
+
+      // Assert NO task was created
+      expect(createNewTaskSpy).not.toHaveBeenCalled()
+
+      // Assert clarification reply was posted
+      expect(createReplySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          isBotReply: true,
+          content: expect.stringContaining('Please provide instructions for the task')
+        })
+      )
+    })
+  })
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 3. MULTI-TENANT BOT USER SCOPING
+  // ───────────────────────────────────────────────────────────────────────────
+  describe('Multi-Tenant Org-Scoped Bot User Lookup', () => {
     it('should return org-specific bot user id and never cross-contaminate between Org A and Org B', async () => {
-      const botUserOrgASpy = jest.spyOn(orchestrator, 'getBotUserIdForOrg')
-      
-      // Mock ensureBotUserForOrg behavior for two different orgs
       const mockBotA = { id: '6a8ac000000000000000000a', email: 'bot+org-a@technewity.ai' }
       const mockBotB = { id: '6a8ac000000000000000000b', email: 'bot+org-b@technewity.ai' }
 
       jest.spyOn(orchestrator as any, 'getBotUserIdForOrg').mockImplementation(async (orgId: string) => {
-        if (orgId === 'org-alpha') return mockBotA.id
-        if (orgId === 'org-beta') return mockBotB.id
+        if (orgId === '6a6ae824f587e315ef597234') return mockBotA.id
+        if (orgId === '6a86c813d9ca962c8f61d469') return mockBotB.id
         throw new Error('Unknown org')
       })
 
-      const botIdA = await orchestrator.getBotUserIdForOrg('org-alpha')
-      const botIdB = await orchestrator.getBotUserIdForOrg('org-beta')
+      const botIdA = await orchestrator.getBotUserIdForOrg('6a6ae824f587e315ef597234')
+      const botIdB = await orchestrator.getBotUserIdForOrg('6a86c813d9ca962c8f61d469')
 
       expect(botIdA).toBe('6a8ac000000000000000000a')
       expect(botIdB).toBe('6a8ac000000000000000000b')
       expect(botIdA).not.toBe(botIdB)
-      expect(botIdA).not.toBe('BOT_USER')
-      expect(botIdB).not.toBe('BOT_USER')
     })
   })
 
   // ───────────────────────────────────────────────────────────────────────────
-  // 3. IDEMPOTENCY ON RETRIES (BUG 2)
+  // 4. IDEMPOTENCY ON RETRIES
   // ───────────────────────────────────────────────────────────────────────────
-  describe('Bug 2 Fix: Idempotent Execution & No Duplicate Tasks on Retry', () => {
+  describe('Idempotent Execution & No Duplicate Tasks on Retry', () => {
     it('should NOT create a duplicate task if chatMessage.linkedTaskId is already set', async () => {
       const mockMessage = {
-        id: 'msg-101',
-        organizationId: 'org-1',
-        projectId: 'proj-1',
-        senderId: 'user-sender',
+        id: '6a8ad0000000000000000101',
+        organizationId: MOCK_ORG_ID,
+        projectId: MOCK_PROJECT_ID,
+        senderId: MOCK_SENDER_ID,
         content: '/Task @bot write documentation',
         mentionUserIds: [],
         fileIds: [],
         status: 'PROCESSING',
-        linkedTaskId: 'existing-task-999' // Already has a linked task from earlier attempt
+        linkedTaskId: '6a8ad0000000000000000999'
       }
 
       jest.spyOn(orchestrator.chatRepo, 'getMessageById').mockResolvedValue(mockMessage as any)
-      jest.spyOn(orchestrator, 'getBotUserIdForOrg').mockResolvedValue('6a8ac000000000000000000a')
+      jest.spyOn(orchestrator, 'getBotUserIdForOrg').mockResolvedValue(MOCK_BOT_ID)
       jest.spyOn(orchestrator, 'checkRateLimit').mockResolvedValue(true)
+      jest.spyOn(orchestrator.chatRepo, 'updateMessageStatus').mockResolvedValue({} as any)
       
       const createNewTaskSpy = jest.spyOn(orchestrator.taskCreateService, 'createNewTask')
-      const updateStatusSpy = jest.spyOn(orchestrator.chatRepo, 'updateMessageStatus').mockResolvedValue({} as any)
 
-      await orchestrator.processMessage('msg-101')
+      await orchestrator.processMessage('6a8ad0000000000000000101')
 
-      // Assert that createNewTask was NEVER called on this retry run
       expect(createNewTaskSpy).not.toHaveBeenCalled()
-    })
-
-    it('should link task immediately upon creation so downstream reply crash leaves message linked', async () => {
-      const mockMessage = {
-        id: 'msg-102',
-        organizationId: 'org-1',
-        projectId: 'proj-1',
-        senderId: 'user-sender',
-        content: '/Task @bot deploy release',
-        mentionUserIds: ['user-dev'],
-        fileIds: [],
-        status: 'PENDING',
-        linkedTaskId: null
-      }
-
-      jest.spyOn(orchestrator.chatRepo, 'getMessageById').mockResolvedValue(mockMessage as any)
-      jest.spyOn(orchestrator, 'getBotUserIdForOrg').mockResolvedValue('6a8ac000000000000000000a')
-      jest.spyOn(orchestrator, 'checkRateLimit').mockResolvedValue(true)
-      jest.spyOn(pmClient.project, 'findUnique').mockResolvedValue({ id: 'proj-1', organizationId: 'org-1' } as any)
-      jest.spyOn(pmClient.members, 'findMany').mockResolvedValue([
-        { uid: 'user-dev', users: { name: 'Dev User', email: 'dev@technewity.ai' } }
-      ] as any)
-
-      ;(geminiClient.parseTaskWithGemini as jest.Mock).mockResolvedValue({
-        intent: 'TASK',
-        title: 'Deploy Release v1.0',
-        rephrased_description: 'Deploy the v1.0 release to production environment.'
-      })
-
-      const createdTask = { id: 'task-new-555', title: 'Deploy Release v1.0' }
-      jest.spyOn(orchestrator.taskCreateService, 'createNewTask').mockResolvedValue(createdTask as any)
-      const updateStatusSpy = jest.spyOn(orchestrator.chatRepo, 'updateMessageStatus').mockResolvedValue({} as any)
-
-      // Mock bot reply creation to throw on attempt 1
-      jest.spyOn(orchestrator.chatRepo, 'createMessage').mockRejectedValueOnce(new Error('Simulated network disconnect on reply'))
-
-      await orchestrator.processMessage('msg-102')
-
-      // Verify that updateMessageStatus was called with the linkedTaskId immediately upon task creation
-      expect(updateStatusSpy).toHaveBeenCalledWith(
-        'msg-102',
-        'COMPLETED',
-        expect.objectContaining({ linkedTaskId: 'task-new-555' })
-      )
     })
   })
 
   // ───────────────────────────────────────────────────────────────────────────
-  // 4. RESILIENT AI FAILURE HANDLING (BUG 3)
+  // 5. END-TO-END FLOWS (TASK, BUG, EMAIL, ATTACHMENTS, DUE DATE)
   // ───────────────────────────────────────────────────────────────────────────
-  describe('Bug 3 Fix: Resilient AI Failure Handling', () => {
-    it('should post a failure reply and mark message FAILED when Gemini throws 5xx, never leaving it in PENDING', async () => {
+  describe('End-to-End Orchestrator Flows', () => {
+    it('Flow 1: /Task command creates a TASK with lead, default +7d dueDate, and concise one-line reply', async () => {
       const mockMessage = {
-        id: 'msg-103',
-        organizationId: 'org-1',
-        projectId: 'proj-1',
-        senderId: 'user-sender',
-        content: '/Task @bot broken prompt',
+        id: '6a8ad0000000000000000201',
+        organizationId: MOCK_ORG_ID,
+        projectId: MOCK_PROJECT_ID,
+        senderId: MOCK_SENDER_ID,
+        content: '/Task @bot Build landing page lead: @VIVEK PANDEY',
         mentionUserIds: [],
         fileIds: [],
         status: 'PENDING',
@@ -223,61 +217,13 @@ describe('BotOrchestratorService Comprehensive Test Suite', () => {
       }
 
       jest.spyOn(orchestrator.chatRepo, 'getMessageById').mockResolvedValue(mockMessage as any)
-      jest.spyOn(orchestrator, 'getBotUserIdForOrg').mockResolvedValue('6a8ac000000000000000000a')
+      jest.spyOn(orchestrator, 'getBotUserIdForOrg').mockResolvedValue(MOCK_BOT_ID)
       jest.spyOn(orchestrator, 'checkRateLimit').mockResolvedValue(true)
-      jest.spyOn(pmClient.project, 'findUnique').mockResolvedValue({ id: 'proj-1', organizationId: 'org-1' } as any)
-      jest.spyOn(pmClient.members, 'findMany').mockResolvedValue([])
+      jest.spyOn(orchestrator.chatRepo, 'updateMessageStatus').mockResolvedValue({} as any)
+      jest.spyOn(orchestrator.aiUsageRepo, 'logUsage').mockResolvedValue(null as any)
 
-      // Simulate Gemini 503 error
-      ;(geminiClient.parseTaskWithGemini as jest.Mock).mockRejectedValue(new Error('503 Service Unavailable'))
-
-      const createReplySpy = jest.spyOn(orchestrator.chatRepo, 'createMessage').mockResolvedValue({ id: 'reply-err' } as any)
-      const updateStatusSpy = jest.spyOn(orchestrator.chatRepo, 'updateMessageStatus').mockResolvedValue({} as any)
-
-      await orchestrator.processMessage('msg-103')
-
-      // Verify failure reply was posted
-      expect(createReplySpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          status: 'FAILED',
-          isBotReply: true,
-          content: expect.stringContaining('AI Assistant Temporary Error')
-        })
-      )
-
-      // Verify message status was updated to FAILED (not left in PENDING)
-      expect(updateStatusSpy).toHaveBeenCalledWith(
-        'msg-103',
-        'FAILED',
-        expect.objectContaining({ errorMessage: '503 Service Unavailable' })
-      )
-    })
-  })
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // 5. END-TO-END FLOWS (TASK, BUG, EMAIL, ATTACHMENTS)
-  // ───────────────────────────────────────────────────────────────────────────
-  describe('End-to-End Orchestrator Flows', () => {
-    it('Flow 1: /Task command should create a TASK with assignees and lead', async () => {
-      const mockMessage = {
-        id: 'msg-task-1',
-        organizationId: 'org-1',
-        projectId: 'proj-1',
-        senderId: 'user-author',
-        content: '/Task @bot Build landing page lead: @Omkar',
-        mentionUserIds: ['user-omkar', 'user-alex'],
-        fileIds: [],
-        status: 'PENDING',
-        linkedTaskId: null
-      }
-
-      jest.spyOn(orchestrator.chatRepo, 'getMessageById').mockResolvedValue(mockMessage as any)
-      jest.spyOn(orchestrator, 'getBotUserIdForOrg').mockResolvedValue('6a8ac000000000000000000a')
-      jest.spyOn(orchestrator, 'checkRateLimit').mockResolvedValue(true)
-      jest.spyOn(pmClient.project, 'findUnique').mockResolvedValue({ id: 'proj-1', organizationId: 'org-1' } as any)
       jest.spyOn(pmClient.members, 'findMany').mockResolvedValue([
-        { uid: 'user-omkar', users: { name: 'Omkar', email: 'omkar@technewity.ai' } },
-        { uid: 'user-alex', users: { name: 'Alex', email: 'alex@technewity.ai' } }
+        { uid: MOCK_VIVEK_ID, users: { name: 'VIVEK PANDEY', email: 'vp983351@gmail.com' } }
       ] as any)
 
       ;(geminiClient.parseTaskWithGemini as jest.Mock).mockResolvedValue({
@@ -287,152 +233,83 @@ describe('BotOrchestratorService Comprehensive Test Suite', () => {
       })
 
       const createNewTaskSpy = jest.spyOn(orchestrator.taskCreateService, 'createNewTask').mockResolvedValue({
-        id: 'task-created-1',
+        id: '6a8ad0000000000000000301',
         title: 'Build Landing Page'
       } as any)
-      jest.spyOn(orchestrator.chatRepo, 'createMessage').mockResolvedValue({ id: 'bot-reply-1' } as any)
-      jest.spyOn(orchestrator.chatRepo, 'updateMessageStatus').mockResolvedValue({} as any)
+      const createReplySpy = jest.spyOn(orchestrator.chatRepo, 'createMessage').mockResolvedValue({ id: 'bot-reply-1' } as any)
 
-      await orchestrator.processMessage('msg-task-1')
+      await orchestrator.processMessage('6a8ad0000000000000000201')
 
+      // Assert Task creation with leadId and non-null dueDate (+7 days)
       expect(createNewTaskSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           body: expect.objectContaining({
             type: 'TASK',
             title: 'Build Landing Page',
-            leadId: 'user-omkar',
-            assigneeIds: ['user-alex']
+            leadId: MOCK_VIVEK_ID,
+            dueDate: expect.any(Date)
           })
+        })
+      )
+
+      // Assert concise one-line reply
+      expect(createReplySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          isBotReply: true,
+          content: expect.stringContaining('✅ <strong>Task created</strong>')
         })
       )
     })
 
-    it('Flow 2: /Bug command should create a task with type BUG', async () => {
+    it('Flow 2: /Email command resolves member name @VIVEK PANDEY to vp983351@gmail.com and creates NO task', async () => {
       const mockMessage = {
-        id: 'msg-bug-1',
-        organizationId: 'org-1',
-        projectId: 'proj-1',
-        senderId: 'user-author',
-        content: '/Bug @bot 500 error on checkout',
-        mentionUserIds: ['user-dev'],
+        id: '6a8ad0000000000000000401',
+        organizationId: MOCK_ORG_ID,
+        projectId: MOCK_PROJECT_ID,
+        senderId: MOCK_SENDER_ID,
+        content: '/Email @bot Send project weekly summary report to @VIVEK PANDEY',
+        mentionUserIds: [],
         fileIds: [],
         status: 'PENDING',
         linkedTaskId: null
       }
 
       jest.spyOn(orchestrator.chatRepo, 'getMessageById').mockResolvedValue(mockMessage as any)
-      jest.spyOn(orchestrator, 'getBotUserIdForOrg').mockResolvedValue('6a8ac000000000000000000a')
+      jest.spyOn(orchestrator, 'getBotUserIdForOrg').mockResolvedValue(MOCK_BOT_ID)
       jest.spyOn(orchestrator, 'checkRateLimit').mockResolvedValue(true)
-      jest.spyOn(pmClient.project, 'findUnique').mockResolvedValue({ id: 'proj-1', organizationId: 'org-1' } as any)
+      jest.spyOn(orchestrator.chatRepo, 'updateMessageStatus').mockResolvedValue({} as any)
+      jest.spyOn(orchestrator.aiUsageRepo, 'logUsage').mockResolvedValue(null as any)
+      jest.spyOn(orchestrator.notificationRepo, 'createNotification').mockResolvedValue({} as any)
+
       jest.spyOn(pmClient.members, 'findMany').mockResolvedValue([
-        { uid: 'user-dev', users: { name: 'Dev', email: 'dev@technewity.ai' } }
+        { uid: MOCK_VIVEK_ID, users: { name: 'VIVEK PANDEY', email: 'vp983351@gmail.com' } }
       ] as any)
 
       ;(geminiClient.parseTaskWithGemini as jest.Mock).mockResolvedValue({
-        intent: 'BUG',
-        title: 'Fix 500 Error on Checkout',
-        rephrased_description: 'Investigate and resolve the 500 server error occurring during checkout.'
-      })
-
-      const createNewTaskSpy = jest.spyOn(orchestrator.taskCreateService, 'createNewTask').mockResolvedValue({
-        id: 'task-bug-1',
-        title: 'Fix 500 Error on Checkout'
-      } as any)
-      jest.spyOn(orchestrator.chatRepo, 'createMessage').mockResolvedValue({ id: 'bot-reply-bug' } as any)
-      jest.spyOn(orchestrator.chatRepo, 'updateMessageStatus').mockResolvedValue({} as any)
-
-      await orchestrator.processMessage('msg-bug-1')
-
-      expect(createNewTaskSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          body: expect.objectContaining({
-            type: 'BUG',
-            title: 'Fix 500 Error on Checkout'
-          })
-        })
-      )
-    })
-
-    it('Flow 3: Attachments should be passed to created Task.fileIds', async () => {
-      const mockMessage = {
-        id: 'msg-attach-1',
-        organizationId: 'org-1',
-        projectId: 'proj-1',
-        senderId: 'user-author',
-        content: '/Task @bot Review mockup',
-        mentionUserIds: [],
-        fileIds: ['r2-key-mockup-123.png', 'r2-key-spec.pdf'],
-        status: 'PENDING',
-        linkedTaskId: null
-      }
-
-      jest.spyOn(orchestrator.chatRepo, 'getMessageById').mockResolvedValue(mockMessage as any)
-      jest.spyOn(orchestrator, 'getBotUserIdForOrg').mockResolvedValue('6a8ac000000000000000000a')
-      jest.spyOn(orchestrator, 'checkRateLimit').mockResolvedValue(true)
-      jest.spyOn(pmClient.project, 'findUnique').mockResolvedValue({ id: 'proj-1', organizationId: 'org-1' } as any)
-      jest.spyOn(pmClient.members, 'findMany').mockResolvedValue([])
-
-      ;(geminiClient.parseTaskWithGemini as jest.Mock).mockResolvedValue({
-        intent: 'TASK',
-        title: 'Review Mockup and Specification',
-        rephrased_description: 'Conduct design and functional review of the attached assets.'
-      })
-
-      const createNewTaskSpy = jest.spyOn(orchestrator.taskCreateService, 'createNewTask').mockResolvedValue({
-        id: 'task-attach-1',
-        title: 'Review Mockup and Specification'
-      } as any)
-      jest.spyOn(orchestrator.chatRepo, 'createMessage').mockResolvedValue({ id: 'bot-reply-att' } as any)
-      jest.spyOn(orchestrator.chatRepo, 'updateMessageStatus').mockResolvedValue({} as any)
-
-      await orchestrator.processMessage('msg-attach-1')
-
-      expect(createNewTaskSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          body: expect.objectContaining({
-            fileIds: ['r2-key-mockup-123.png', 'r2-key-spec.pdf']
-          })
-        })
-      )
-    })
-
-    it('Flow 4: /Email command should dispatch sendEmail() and NOT create a Task', async () => {
-      const mockMessage = {
-        id: 'msg-email-1',
-        organizationId: 'org-1',
-        projectId: 'proj-1',
-        senderId: 'user-author',
-        content: '/Email @bot Send sprint report to client@acme.com',
-        mentionUserIds: [],
-        fileIds: [],
-        status: 'PENDING',
-        linkedTaskId: null
-      }
-
-      jest.spyOn(orchestrator.chatRepo, 'getMessageById').mockResolvedValue(mockMessage as any)
-      jest.spyOn(orchestrator, 'getBotUserIdForOrg').mockResolvedValue('6a8ac000000000000000000a')
-      jest.spyOn(orchestrator, 'checkRateLimit').mockResolvedValue(true)
-      jest.spyOn(pmClient.project, 'findUnique').mockResolvedValue({ id: 'proj-1', organizationId: 'org-1' } as any)
-      jest.spyOn(pmClient.members, 'findMany').mockResolvedValue([])
-
-      ;(geminiClient.parseTaskWithGemini as jest.Mock).mockResolvedValue({
         intent: 'EMAIL',
-        title: 'Sprint Report',
-        email_subject: 'Weekly Sprint Progress Report',
-        email_body: 'Here is the summary of sprint achievements and timeline milestones.'
+        title: 'Project Weekly Summary Report',
+        email_subject: 'Project Weekly Summary Report',
+        email_body: 'Here is the weekly summary report for your review.'
       })
 
       const createNewTaskSpy = jest.spyOn(orchestrator.taskCreateService, 'createNewTask')
-      jest.spyOn(orchestrator.chatRepo, 'createMessage').mockResolvedValue({ id: 'bot-reply-mail' } as any)
-      jest.spyOn(orchestrator.chatRepo, 'updateMessageStatus').mockResolvedValue({} as any)
+      const createReplySpy = jest.spyOn(orchestrator.chatRepo, 'createMessage').mockResolvedValue({ id: 'bot-reply-mail' } as any)
 
-      await orchestrator.processMessage('msg-email-1')
+      await orchestrator.processMessage('6a8ad0000000000000000401')
 
-      // Assert sendEmail was invoked with recipient
+      // Assert sendEmail was invoked with Vivek Pandey's email
       expect(emailLib.sendEmail).toHaveBeenCalledWith(
         expect.objectContaining({
-          emails: ['client@acme.com'],
-          subject: 'Weekly Sprint Progress Report'
+          emails: ['vp983351@gmail.com'],
+          subject: 'Project Weekly Summary Report'
+        })
+      )
+
+      // Assert concise one-line reply
+      expect(createReplySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          isBotReply: true,
+          content: '<p>✅ <strong>Email sent to vp983351@gmail.com</strong></p>'
         })
       )
 

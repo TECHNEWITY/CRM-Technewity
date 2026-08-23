@@ -1,4 +1,5 @@
 'use client'
+import { useEffect, useState } from 'react'
 
 import MemberAvatar from '@/components/MemberAvatar'
 import { useMemberStore } from '@/store/member'
@@ -42,6 +43,26 @@ export default function ChatMessageItem({ message }: { message: ChatMessageRecor
     router.push(`/${orgName}/project/${projectId}?mode=task&taskId=${taskId}`)
   }
 
+  // Progressive thinking state timer
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+
+  useEffect(() => {
+    if (message.status !== 'PENDING' && message.status !== 'PROCESSING') {
+      return
+    }
+
+    const createdTime = message.createdAt ? new Date(message.createdAt).getTime() : Date.now()
+    const initialElapsed = Math.max(0, Math.floor((Date.now() - createdTime) / 1000))
+    setElapsedSeconds(initialElapsed)
+
+    const interval = setInterval(() => {
+      const currentElapsed = Math.max(0, Math.floor((Date.now() - createdTime) / 1000))
+      setElapsedSeconds(currentElapsed)
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [message.status, message.createdAt])
+
   return (
     <div
       className={`flex gap-3 text-sm group ${
@@ -84,20 +105,27 @@ export default function ChatMessageItem({ message }: { message: ChatMessageRecor
           dangerouslySetInnerHTML={{ __html: message.content }}
         />
 
-        {/* Pending / Thinking state */}
+        {/* Progressive Pending / Thinking state */}
         {message.status === 'PENDING' || message.status === 'PROCESSING' ? (
-          <div className="mt-2 flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-xs font-medium bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1.5 rounded-md border border-indigo-100 dark:border-indigo-900/50 animate-pulse">
-            <HiSparkles className="w-3.5 h-3.5 animate-spin" />
-            <span>AI Bot is thinking and processing your request...</span>
+          <div className="mt-2 flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-xs font-medium bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1.5 rounded-md border border-indigo-100 dark:border-indigo-900/50">
+            <HiSparkles className="w-3.5 h-3.5 animate-spin text-indigo-500" />
+            <span>
+              {elapsedSeconds < 20
+                ? 'Bot is thinking…'
+                : elapsedSeconds < 60
+                ? 'Still working on it…'
+                : 'Taking longer than expected…'}
+            </span>
+            <span className="text-[10px] opacity-60 ml-auto font-mono">{elapsedSeconds}s</span>
           </div>
         ) : null}
 
-        {/* Failed state */}
-        {message.status === 'FAILED' && message.errorMessage ? (
-          <div className="mt-2 flex items-center gap-2 text-red-600 dark:text-red-400 text-xs bg-red-50 dark:bg-red-950/30 px-3 py-1.5 rounded-md border border-red-100 dark:border-red-900/40">
-            <span>⚠️ {message.errorMessage}</span>
+        {/* Failed / Timed out state */}
+        {message.status === 'FAILED' && (
+          <div className="mt-2 flex items-center justify-between text-red-600 dark:text-red-400 text-xs bg-red-50 dark:bg-red-950/30 px-3 py-1.5 rounded-md border border-red-100 dark:border-red-900/40">
+            <span>⚠️ {message.errorMessage || 'Request timed out or failed to process.'}</span>
           </div>
-        ) : null}
+        )}
 
         {/* Linked Task Button */}
         {message.linkedTaskId && (

@@ -52,6 +52,35 @@ router.post('/project/:projectId/chat/message', [authMiddleware, beProjectMember
     const htmlMentionIds = extractMentionIdsFromHtml(content)
     const combinedMentionIds = Array.from(new Set([...(mentionUserIds || []), ...htmlMentionIds]))
 
+    // Match any @Name against project and organization members
+    const projectMembers = await pmClient.members.findMany({
+      where: { projectId },
+      include: { users: true }
+    })
+    const orgMembers = orgId
+      ? await pmClient.organizationMembers.findMany({
+          where: { organizationId: orgId },
+          include: { users: true }
+        })
+      : []
+
+    const allMembers = [
+      ...projectMembers.map((m: any) => ({ id: m.uid, name: m.users?.name })),
+      ...orgMembers.map((m: any) => ({ id: m.uid, name: m.users?.name }))
+    ]
+
+    const plainText = content.replace(/<[^>]*>/g, ' ')
+    for (const m of allMembers) {
+      if (!m.name) continue
+      const escaped = m.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const pattern = new RegExp(`@${escaped}(?!\\w)`, 'i')
+      if (pattern.test(plainText) || pattern.test(content)) {
+        if (!combinedMentionIds.includes(m.id)) {
+          combinedMentionIds.push(m.id)
+        }
+      }
+    }
+
     // Find Bot User for this organization (org-scoped)
     const botUser = orgId ? await ensureBotUserForOrg(orgId) : null
     const botUserId = botUser?.id

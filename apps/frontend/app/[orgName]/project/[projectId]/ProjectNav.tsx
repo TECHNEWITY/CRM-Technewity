@@ -28,15 +28,6 @@ export default function ProjectNav() {
         <ProjectTabContent />
       </div>
       <div className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5">
-        <button
-          type="button"
-          onClick={() => useChatStore.getState().toggleOpen()}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-medium text-xs shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all hover:scale-105 active:scale-95"
-          title="Open AI Project Chat & Task Bot"
-        >
-          <HiSparkles className="w-4 h-4 text-yellow-300 animate-pulse" />
-          <span>AI Chat & Bot</span>
-        </button>
         <div className="hidden sm:flex items-center gap-2">
           {/* <PromptGenerator /> */}
           {/* <FavoriteAddModal /> */}
