@@ -84,4 +84,5 @@ export const req = instance
 export const httpGet = req.get
 export const httpPost = req.post
 export const httpPut = req.put
+export const httpPatch = req.patch
 export const httpDel = req.delete

@@ -43,6 +43,29 @@ router.get('/current-storage-size', async (req, res) => {
   })
 })
 
+router.get('/quota', async (req, res) => {
+  const { orgId } = req.query as { orgId: string }
+  if (!orgId) {
+    return res.status(400).json({ error: 'ORG_MUST_PROVIDED' })
+  }
+
+  const storageCache = new StorageCache(orgId)
+  const usedBytes = (await storageCache.getTotalSize()) || 0
+  const org = await mdOrgGetOne(orgId)
+  const capBytes = org?.maxStorageSize || 10 * 1024 * 1024 * 1024 // 10 GB free tier
+
+  return res.json({
+    status: 200,
+    data: {
+      usedBytes,
+      capBytes,
+      maxSingleFileBytes: 35 * 1024 * 1024,
+      freeTierRemainingBytes: Math.max(0, capBytes - usedBytes),
+      usedPercentage: Math.min(100, Math.round((usedBytes / capBytes) * 100))
+    }
+  })
+})
+
 router.post('/create-presigned-url', async (req, res, next) => {
 
   const { name, type, orgId, projectId } = req.body as {

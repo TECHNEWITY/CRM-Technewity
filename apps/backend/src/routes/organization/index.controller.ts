@@ -8,6 +8,7 @@ import {
   mdOrgUpdate,
   mdOrgGetOneBySlug,
   generateSlug,
+  ensureBotUserForOrg
 } from '@database'
 import {
   BaseController,
@@ -128,6 +129,11 @@ export class OrganizationController extends BaseController {
         createdBy: id,
         updatedAt: null,
         updatedBy: null
+      })
+
+      // Ensure bot user is created and attached to the organization
+      await ensureBotUserForOrg(result.id).catch(err => {
+        console.error('Failed to auto-seed bot user for new org:', err)
       })
 
       return result

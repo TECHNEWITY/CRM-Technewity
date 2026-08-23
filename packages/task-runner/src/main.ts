@@ -2,6 +2,7 @@ import 'dotenv/config'
 import { connectPubClient, connectSubClient } from '@event-bus'
 import { SchedulerAction } from './scheduler'
 import { NotificationAction } from './actions/NotificationAction'
+import { runStorageQuotaGuard } from './actions/StorageQuotaGuardAction'
 import { cronJob } from './cronJob'
 
 // async function sendNotice(content: string) {
@@ -39,6 +40,18 @@ export const runScheduler = () => {
       // cronJob.create(runAt20h, { every: "minute" }, () => {
       const CHANNEL_DAY_STATS = 'stats:day-stats'
       redis.publish(CHANNEL_DAY_STATS, 'heelo')
+    })
+
+    // ─── StorageQuotaGuard: runs daily at 02:00 UTC ─────────────────────────
+    // Audits R2 + B2 usage per org, alerts admins at 80%, schedules archives
+    // at 95%, and triggers human-review notifications if no files can be moved.
+    // POLICY: nothing is ever silently deleted; all actions are logged.
+    cronJob.create('storage-quota-guard', '0 2 * * *', async () => {
+      try {
+        await runStorageQuotaGuard()
+      } catch (err) {
+        console.error('[StorageQuotaGuard] Unhandled cron error:', err)
+      }
     })
   })
 

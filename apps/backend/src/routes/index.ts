@@ -14,6 +14,9 @@ import meetingRouter from './meeting'
 import { authMiddleware } from '../middlewares'
 import ActivityRouter from './activity'
 import CommentRouer from './comment'
+import chatRouter from './chat'
+import aiRouter from './ai'
+import notificationRouter from './notification'
 
 // import "./test";
 import ProjectController from './project/project.controller'
@@ -99,5 +102,8 @@ router.use(dboardRouter)
 router.use(taskRouter)
 router.use(projectRouter)
 router.use(projectMemberRouter)
+router.use(chatRouter)
+router.use(aiRouter)
+router.use(notificationRouter)
 
 export default router

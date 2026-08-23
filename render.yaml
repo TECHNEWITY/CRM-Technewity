@@ -20,10 +20,22 @@ services:
     value: 30m
   - key: JWT_SECRET_KEY
     value: 12GUY3N76U21d4IJ
+  - key: RESEND_TOKEN
+    sync: false
   - key: RESEND_EMAIL_DOMAIN
     value: technewity.com
+  - key: RESEND_EMAIL_FROM
+    value: noreply@technewity.com
   - key: RESEND_EMAIL_NAME
     value: Technewity Labs
+  - key: NEXT_PUBLIC_PUSHER_CHANNEL_APP_KEY
+    sync: false
+  - key: NEXT_PUBLIC_PUSHER_CHANNEL_APP_CLUSTER
+    value: ap2
+  - key: PUSHER_CHANNEL_APP_ID
+    sync: false
+  - key: PUSHER_CHANNEL_SECRET
+    sync: false
   - key: NEXT_PUBLIC_LIVEKIT_URL
     value: wss://crm-technewity-fm1qqgbt.livekit.cloud
   - key: LIVEKIT_API_KEY
@@ -34,6 +46,16 @@ services:
     value: 7us9s88o121ieeuo
   - key: JWT_REFRESH_EXPIRED
     value: 4h
+  - key: AI_PROVIDER
+    value: gemini
+  - key: AI_MODEL
+    value: gemini-3.7-flash
+  - key: GEMINI_API_KEY
+    sync: false
+  - key: AI_API_KEY
+    sync: false
+  - key: BOT_RATE_LIMIT_PER_USER_PER_DAY
+    value: '50'
   region: singapore
   buildCommand: yarn install; yarn generate2; yarn build:be
   startCommand: yarn prod:be
@@ -50,6 +72,10 @@ services:
     value: https://crm.technewity.com/
   - key: NEXT_PUBLIC_APP_NAME
     value: Technewity Labs
+  - key: NEXT_PUBLIC_PUSHER_CHANNEL_APP_KEY
+    sync: false
+  - key: NEXT_PUBLIC_PUSHER_CHANNEL_APP_CLUSTER
+    value: ap2
   - key: NEXT_PUBLIC_LIVEKIT_URL
     value: wss://crm-technewity-fm1qqgbt.livekit.cloud
   - key: NEXT_PUBLIC_FIREBASE_CLIENT_CONFIG
@@ -58,3 +84,21 @@ services:
   buildCommand: yarn install; yarn generate2; yarn build:fe
   startCommand: npx next start ./dist/apps/frontend/ -p $PORT
 
+- type: worker
+  name: technewity-task-runner
+  runtime: node
+  plan: free
+  envVars:
+  - key: REDIS_HOST
+    sync: false
+  - key: MONGODB_URL
+    sync: false
+  - key: AI_PROVIDER
+    value: gemini
+  - key: AI_MODEL
+    value: gemini-3.7-flash
+  - key: GEMINI_API_KEY
+    sync: false
+  region: singapore
+  buildCommand: yarn install; yarn generate2; yarn build:se
+  startCommand: yarn prod:se

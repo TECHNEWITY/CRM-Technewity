@@ -14,9 +14,12 @@ export const mdUserFindFirst = async (cond: { id: string }) => {
   })
 }
 
-export const mdUserAdd = async (data: Omit<User, 'id'>) => {
+export const mdUserAdd = async (data: Omit<User, 'id' | 'isBot'> & { isBot?: boolean }) => {
   return userModel.create({
-    data: data
+    data: {
+      ...(data as any),
+      isBot: data.isBot ?? false
+    } as any
   })
 }
 

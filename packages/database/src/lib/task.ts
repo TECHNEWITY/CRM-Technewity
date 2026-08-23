@@ -268,19 +268,24 @@ export const mdTaskCounter = () => {
   console.log(1)
 }
 
-export const mdTaskAdd = async (data: Omit<Task, 'id'>) => {
+export const mdTaskAdd = async (data: Omit<Task, 'id' | 'leadId' | 'createdVia'> & { leadId?: string | null; createdVia?: any }) => {
   return taskModel.create({
-    data
+    data: {
+      ...data,
+      leadId: data.leadId || null,
+      createdVia: data.createdVia || 'MANUAL'
+    }
   })
 }
 
-export const mdTaskAddMany = async (data: Omit<Task, 'id'>[]) => {
+export const mdTaskAddMany = async (data: (Omit<Task, 'id' | 'leadId' | 'createdVia'> & { leadId?: string | null; createdVia?: any })[]) => {
   return taskModel.createMany({
-    data
+    data: data.map(d => ({
+      ...d,
+      leadId: d.leadId || null,
+      createdVia: d.createdVia || 'MANUAL'
+    }))
   })
-  // return pmClient.$transaction(
-  //   data.map(task => taskModel.create({ data: task }))
-  // )
 }
 
 export const mdTaskUpdateMany = async (ids: string[], data: Partial<Task>) => {

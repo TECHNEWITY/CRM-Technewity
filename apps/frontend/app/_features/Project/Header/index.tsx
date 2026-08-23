@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import ProjectMemberView from "@/features/ProjectMember/View"
 import { useProjectStore } from "@/store/project"
 import { projectUpdate } from "@/services/project"
-import { HiOutlinePencilSquare, HiOutlineCheck } from "react-icons/hi2"
+import { HiOutlinePencilSquare, HiOutlineCheck, HiSparkles } from "react-icons/hi2"
 import { messageError, messageSuccess } from "@ui-components"
+import NotificationBell from "@/features/NotificationCenter"
+import { useChatStore } from "@/store/chat"
 
 export default function ProjectHeader() {
   const { selectedProject, updateProject } = useProjectStore(state => state)
@@ -73,7 +75,19 @@ export default function ProjectHeader() {
           </div>
         )}
       </div>
-      <ProjectMemberView />
+      <div className="flex items-center gap-2">
+        <NotificationBell />
+        <button
+          type="button"
+          onClick={() => useChatStore.getState().toggleOpen()}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 rounded-lg border border-indigo-200/80 dark:border-indigo-800 transition-colors shadow-sm"
+          title="Open AI Chat & Task Bot"
+        >
+          <HiSparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <span className="hidden sm:inline">AI Chat & Bot</span>
+        </button>
+        <ProjectMemberView />
+      </div>
     </h2>
   )
 }

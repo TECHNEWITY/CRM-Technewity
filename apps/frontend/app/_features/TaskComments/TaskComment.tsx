@@ -4,6 +4,7 @@ import './style.css'
 import { useEffect, useState } from 'react'
 import Mention from '@tiptap/extension-mention'
 import { useMemberStore } from '@/store/member'
+import { aiRephrase } from '@/services/ai'
 
 interface ITaskCommentInputProps {
   userId: string
@@ -37,6 +38,16 @@ const TaskComment = ({
     onCancel && onCancel()
   }
 
+  const handleRephrase = async (text: string) => {
+    try {
+      const res = await aiRephrase(text)
+      return res.data?.data?.rephrasedText || text
+    } catch (error) {
+      console.error('Rephrase error:', error)
+      return text
+    }
+  }
+
   return (
     <div className="flex gap-2 items-start">
       <div className="mt-2">
@@ -44,6 +55,7 @@ const TaskComment = ({
       </div>
       <div className="w-full task-comment">
         <Form.RichTextEditor
+          onRephrase={handleRephrase}
           onCtrlEnter={v => {
             onValueSubmit(v)
             eraseAfterSubmit && setValue('')

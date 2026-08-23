@@ -1,17 +1,18 @@
 import StorageConfigurationNotFoundException from "../exceptions/StorageConfigurationNotFoundException"
 import OrganizationStorageService, { IStorageAWSConfig, IStorageGoogleDriveConfig } from "./organizationStorage.service"
 import AwsS3StorageProvider from "../providers/storage/AwsS3StorageProvider"
-import { mdOrgGetOne, mdStorageGetOne, mdTaskGetOne, mdTaskUpdate } from "@database"
+import DigitalOceanStorageProvider from '../providers/storage/DigitalOceanStorageProvider'
+import GoogleDriveStorageProvider from '../providers/storage/GoogleDriveStorageProvider'
+import CloudflareR2StorageProvider from '../providers/storage/CloudflareR2StorageProvider'
+import BackblazeB2StorageProvider from '../providers/storage/BackblazeB2StorageProvider'
+import { IStorageProvider } from '../providers/storage/IStorageProvider'
+import { OrgStorageType } from "@prisma/client"
+import { PutObjectCommand, HeadBucketCommand, S3Client } from "@aws-sdk/client-s3"
+import { fileStorageModel, mdStorageGetOne, mdTaskGetOne, mdTaskUpdate } from '@database'
 import StorageCache from "../caches/StorageCache"
 import IncorrectConfigurationException from "../exceptions/IncorrectConfigurationException"
-import { fileStorageModel } from "packages/database/src/lib/_prisma"
 import { findNDelCaches } from "../lib/redis"
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
-import { IStorageProvider } from '../providers/storage/IStorageProvider';
-import DigitalOceanStorageProvider from '../providers/storage/DigitalOceanStorageProvider';
-import GoogleDriveStorageProvider from '../providers/storage/GoogleDriveStorageProvider';
-import { OrgStorageType } from "@prisma/client"
-import { HeadBucketCommand } from "@aws-sdk/client-s3"
+
 
 export const MB = 1024 * 1024
 export const GB = 1024 * MB
@@ -92,6 +93,31 @@ export class StorageService {
         break
       }
 
+      case OrgStorageType.CLOUDFLARE_R2: {
+        const c = config as any
+        this.storageProvider = new CloudflareR2StorageProvider({
+          accountId: c.accountId || c.region,
+          accessKeyId: c.accessKey || c.accessKeyId,
+          secretAccessKey: c.secretKey || c.secretAccessKey,
+          bucketName: c.bucketName,
+          customDomain: c.customDomain,
+          orgId: this.orgId
+        })
+        break
+      }
+
+      case OrgStorageType.BACKBLAZE_B2: {
+        const c = config as any
+        this.storageProvider = new BackblazeB2StorageProvider({
+          region: c.region || 'us-east-005',
+          keyId: c.keyId || c.accessKey,
+          applicationKey: c.applicationKey || c.secretKey,
+          bucketName: c.bucketName,
+          orgId: this.orgId
+        })
+        break
+      }
+
       default:
         throw new Error(`Unsupported storage type: ${storage.type}`)
     }
@@ -166,6 +192,24 @@ export class StorageService {
         return await this.validateDigitalOceanConfig(config as { bucketName: string; region: string; secretKey: string; accessKey: string })
       } else if (type === OrgStorageType.GOOGLE_DRIVE) {
         return await this.validateGoogleDriveConfig(config as { clientEmail: string; privateKey: string; folderId: string })
+      } else if (type === OrgStorageType.CLOUDFLARE_R2) {
+        const provider = new CloudflareR2StorageProvider({
+          accountId: (config as any).accountId || config.region || '',
+          accessKeyId: config.accessKey || (config as any).accessKeyId || '',
+          secretAccessKey: config.secretKey || (config as any).secretAccessKey || '',
+          bucketName: config.bucketName || '',
+          orgId: this.orgId
+        })
+        return await provider.validateConfig()
+      } else if (type === OrgStorageType.BACKBLAZE_B2) {
+        const provider = new BackblazeB2StorageProvider({
+          region: config.region || 'us-east-005',
+          keyId: (config as any).keyId || config.accessKey || '',
+          applicationKey: (config as any).applicationKey || config.secretKey || '',
+          bucketName: config.bucketName || '',
+          orgId: this.orgId
+        })
+        return await provider.validateConfig()
       }
       return false
     } catch (error) {
@@ -314,4 +358,30 @@ export class StorageService {
     const provider = await this.initStorageProvider()
     return provider.getObjectURL(keyName)
   }
+
+  /**
+   * Returns the combined storage usage for this org across all providers,
+   * using the FileStorage table as the source of truth for per-file sizes.
+   *
+   * FREE_TIER_CEILING_BYTES: Cloudflare R2 (10 GB) + Backblaze B2 (10 GB) = 20 GB
+   */
+  public static readonly FREE_TIER_CEILING_BYTES = 20 * 1024 * 1024 * 1024
+
+  public async getCombinedUsage(): Promise<{
+    usedBytes: number
+    totalBytes: number
+    percentUsed: number
+  }> {
+    const files = await fileStorageModel.findMany({
+      where: { organizationId: this.orgId },
+      select: { size: true }
+    })
+
+    const usedBytes = files.reduce((acc: number, f: { size: number | null }) => acc + (f.size || 0), 0)
+    const totalBytes = StorageService.FREE_TIER_CEILING_BYTES
+    const percentUsed = Math.round((usedBytes / totalBytes) * 100)
+
+    return { usedBytes, totalBytes, percentUsed }
+  }
 }
+

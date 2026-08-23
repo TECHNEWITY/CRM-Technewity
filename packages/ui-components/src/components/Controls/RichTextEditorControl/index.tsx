@@ -22,6 +22,7 @@ import {
   AiOutlineUnderline
 } from 'react-icons/ai'
 import { IoImageOutline } from 'react-icons/io5'
+import { HiSparkles } from 'react-icons/hi2'
 
 const DisableEscape = Extension.create({
   addKeyboardShortcuts() {
@@ -56,10 +57,13 @@ export default function RichTextEditor({
   disabled,
   readOnly,
   extensions = [],
+  enableRephrase = true,
+  onRephrase,
   onCtrlEnter,
   onCtrlEsc,
   onBlur
 }: RichTextEditorProps) {
+  const [isRephrasing, setIsRephrasing] = useState(false)
   const classes = ['form-control']
 
   disabled && classes.push('disabled')
@@ -116,9 +120,26 @@ export default function RichTextEditor({
     return null
   }
 
+  const handleRephrase = async () => {
+    const currentText = editor.getText()
+    if (!currentText || !currentText.trim()) return
+    if (!onRephrase) return
+    try {
+      setIsRephrasing(true)
+      const rephrased = await onRephrase(currentText)
+      if (rephrased) {
+        editor.commands.setContent(rephrased)
+      }
+    } catch (err) {
+      console.error('Rephrase error:', err)
+    } finally {
+      setIsRephrasing(false)
+    }
+  }
+
   const marks = () => {
     return (
-      <div className="flex gap-2 pt-3">
+      <div className="flex gap-2 pt-3 items-center">
         <Button
           size="sm"
           className={`mark ${editor.isActive('bold') ? 'mark-active' : ''}`}
@@ -158,6 +179,19 @@ export default function RichTextEditor({
           }}
           leadingIcon={<IoImageOutline />}
         />
+
+        {enableRephrase && onRephrase ? (
+          <div className="ml-auto">
+            <Button
+              size="sm"
+              className="mark text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-medium flex items-center gap-1"
+              onClick={handleRephrase}
+              loading={isRephrasing}
+              title="Rephrase with AI"
+              leadingIcon={<HiSparkles className="w-4 h-4 text-indigo-500" />}
+            />
+          </div>
+        ) : null}
       </div>
     )
   }

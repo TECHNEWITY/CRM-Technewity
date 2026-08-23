@@ -47,6 +47,8 @@ type RichTextEditorBaseProps = Omit<InputBaseProps, 'onChange' | 'onEnter'> & {
   rows: number
   cols: number
   extensions?: (Node | Mark)[]
+  enableRephrase?: boolean
+  onRephrase?: (text: string) => Promise<string>
 }
 
 type TexteditorBaseProps = Omit<InputBaseProps, 'onChange' | 'onEnter'> & {

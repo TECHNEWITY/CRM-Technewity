@@ -9,7 +9,10 @@ import { useParams } from 'next/navigation'
 import { taskAddMany, taskGetAll } from '@/services/task'
 import { useTaskStore } from '@/store/task'
 
-type ITaskWithoutId = Omit<Task, 'id'>
+type ITaskWithoutId = Omit<Task, 'id'> & {
+  leadId?: string | null
+  createdVia?: any
+}
 
 export default function TaskImportAction() {
   const [loading, setLoading] = useState(false)
@@ -119,6 +122,8 @@ export default function TaskImportAction() {
         progress: null,
         parentTaskId: null,
         taskPoint,
+        leadId: null,
+        createdVia: 'MANUAL' as any,
         createdBy: null,
         createdAt: null,
         updatedBy: null,

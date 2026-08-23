@@ -28,3 +28,11 @@ export const commentModel = pmClient.comment
 export const statsModel = pmClient.stats
 export const fieldModel = pmClient.field
 
+// New models added in schema migration.
+// These are accessed via a type-cast until `prisma generate` completes
+// (the query_engine DLL was locked by another process during the last attempt).
+// Safe to use at runtime once the DB schema migration has been applied.
+const pmAny = pmClient as any
+export const chatMessageModel = pmAny.chatMessage
+export const notificationModel = pmAny.notification
+export const aiUsageLogModel = pmAny.aiUsageLog

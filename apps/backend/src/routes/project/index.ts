@@ -14,7 +14,8 @@ import {
   mdProjectUpdate,
   mdProjectView,
   mdTaskPointAddMany,
-  mdTaskStatusAddMany
+  mdTaskStatusAddMany,
+  ensureBotMemberForProject
 } from '@database'
 import { Router } from 'express'
 import { authMiddleware } from '../../middlewares'
@@ -273,6 +274,13 @@ router.post('/project', async (req: AuthRequest, res) => {
       console.log('done')
 
       delCache([CKEY.USER_PROJECT, userId])
+
+      // Auto-add bot user to new project
+      if (body.organizationId) {
+        await ensureBotMemberForProject(result.id, body.organizationId).catch(err => {
+          console.error('Failed to auto-add bot member to new project:', err)
+        })
+      }
 
       const retData: Project = { ...result, projectViewId: firstProjectView.id }
       console.log('delete cache done', retData)

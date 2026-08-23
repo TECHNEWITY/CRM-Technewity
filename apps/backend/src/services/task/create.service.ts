@@ -81,6 +81,8 @@ export default class TaskCreateService {
           visionId: visionId || null,
           parentTaskId: null,
           taskPoint: null,
+          leadId: (body as any).leadId || null,
+          createdVia: (body as any).createdVia || 'MANUAL',
           createdBy: uid,
           createdAt: new Date(),
           updatedAt: null,

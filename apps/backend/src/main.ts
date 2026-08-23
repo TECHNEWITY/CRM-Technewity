@@ -10,8 +10,10 @@ import ApiNotFoundException from './exceptions/ApiNotFoundException'
 import { isDevMode } from './lib/utils'
 import { checkHealthRoute } from './checkhealth'
 import { runScheduler } from "@task-runner";
+import { getBotQueueInstance } from './queues/Bot'
 
 runScheduler()
+getBotQueueInstance()
 
 connectPubClient((err) => {
   console.log(err)
