@@ -3,6 +3,7 @@ import {
   AiUsageLogRepository,
   ChatRepository,
   NotificationRepository,
+  ensureBotUserForOrg,
   pmClient
 } from '@database'
 import TaskCreateService from '../task/create.service'
@@ -30,11 +31,19 @@ const ChatMessageStatus = {
 } as const
 type ChatMessageStatus = typeof ChatMessageStatus[keyof typeof ChatMessageStatus]
 
+/**
+ * Escape special regex characters in member names
+ */
+export const escapeRegExp = (str: string): string => {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 export class BotOrchestratorService {
   chatRepo: ChatRepository
   aiUsageRepo: AiUsageLogRepository
   notificationRepo: NotificationRepository
   taskCreateService: TaskCreateService
+  private botUserOrgCache = new Map<string, string>()
 
   constructor() {
     this.chatRepo = new ChatRepository()
@@ -44,9 +53,26 @@ export class BotOrchestratorService {
   }
 
   /**
+   * Org-scoped bot user lookup with in-memory request cache
+   */
+  public async getBotUserIdForOrg(organizationId: string): Promise<string> {
+    if (this.botUserOrgCache.has(organizationId)) {
+      return this.botUserOrgCache.get(organizationId)!
+    }
+
+    const botUser = await ensureBotUserForOrg(organizationId)
+    if (!botUser || !botUser.id) {
+      throw new Error(`Bot user could not be provisioned for organization: ${organizationId}`)
+    }
+
+    this.botUserOrgCache.set(organizationId, botUser.id)
+    return botUser.id
+  }
+
+  /**
    * Converts TipTap HTML to normalized plain text while preserving mentions
    */
-  private htmlToPlainText(html: string): string {
+  public htmlToPlainText(html: string): string {
     return html
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<\/p>/gi, '\n')
@@ -58,7 +84,7 @@ export class BotOrchestratorService {
   /**
    * Deterministic slash command parser — takes precedence over LLM output
    */
-  private extractSlashCommand(text: string): ChatCommandType | null {
+  public extractSlashCommand(text: string): ChatCommandType | null {
     const trimmed = text.trim()
     if (/^\/task\b/i.test(trimmed)) return ChatCommandType.TASK
     if (/^\/bug\b/i.test(trimmed)) return ChatCommandType.BUG
@@ -67,14 +93,14 @@ export class BotOrchestratorService {
   }
 
   /**
-   * Deterministic Lead extraction via natural language keywords.
-   * Convention: "lead: @Name", "lead is @Name", "lead will be @Name"
-   * Fallback: first @mention becomes lead.
-   *
-   * SIGN-OFF CONFIRMED: natural-language lead detection with regex, per user decision.
-   * If org has strict accountability needs, upgrade to explicit `/lead @Name` syntax.
+   * Deterministic Lead extraction via natural language keywords or HTML data-id.
+   * Bug 4 Fix:
+   * 1. Prefers HTML data-id span extraction.
+   * 2. Uses regex-escaped member names and word-boundaries to prevent crash on names with ()
+   *    and mis-assignment on overlapping names (e.g. "Om" vs "Omkar").
+   * 3. Sorts candidate members by name length descending.
    */
-  private extractLeadId({
+  public extractLeadId({
     htmlContent,
     plainText,
     candidateMemberIds,
@@ -95,10 +121,16 @@ export class BotOrchestratorService {
     }
 
     // 2. Fallback: plain text "lead: @Name" or "lead @Name"
+    // Sort members by name length descending so longer names ("Omkar") match before shorter substrings ("Om")
     if (!leadId) {
-      for (const m of members) {
+      const sortedMembers = [...members]
+        .filter((m) => !!m.name)
+        .sort((a, b) => (b.name || '').length - (a.name || '').length)
+
+      for (const m of sortedMembers) {
         if (!m.name) continue
-        const nameRegex = new RegExp(`(?:lead\\s*(?::|is|will be))\\s*@?${m.name}`, 'i')
+        const escapedName = escapeRegExp(m.name)
+        const nameRegex = new RegExp(`(?:lead\\s*(?::|is|will be))\\s*@?${escapedName}(?!\\w)`, 'i')
         if (nameRegex.test(plainText) && candidateMemberIds.includes(m.id)) {
           leadId = m.id
           break
@@ -106,7 +138,7 @@ export class BotOrchestratorService {
       }
     }
 
-    const assigneeIds = candidateMemberIds.filter(id => id !== leadId)
+    const assigneeIds = candidateMemberIds.filter((id) => id !== leadId)
     // If no explicit lead but mentions exist, first mention is lead
     if (!leadId && candidateMemberIds.length > 0) {
       leadId = candidateMemberIds[0]
@@ -114,15 +146,14 @@ export class BotOrchestratorService {
 
     return {
       leadId,
-      assigneeIds: assigneeIds.length > 0 ? assigneeIds : (leadId ? [leadId] : [])
+      assigneeIds: assigneeIds.length > 0 ? assigneeIds : leadId ? [leadId] : []
     }
   }
 
   /**
    * Extract literal email address from text.
-   * Email hardening: flag if address is not an existing project member.
    */
-  private extractLiteralEmail(text: string): string | null {
+  public extractLiteralEmail(text: string): string | null {
     const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i
     const match = text.match(emailRegex)
     return match ? match[1] : null
@@ -140,7 +171,10 @@ export class BotOrchestratorService {
   }
 
   /**
-   * Main async execution pipeline called by the BullMQ worker
+   * Main async execution pipeline called by the BullMQ worker.
+   * Bug 1 Fix: Strictly org-scoped bot user ID.
+   * Bug 2 Fix: Idempotent execution (skips recreation if linkedTaskId exists).
+   * Bug 3 Fix: Resilient AI parsing with friendly failure replies.
    */
   public async processMessage(chatMessageId: string): Promise<void> {
     const message = await this.chatRepo.getMessageById(chatMessageId)
@@ -149,13 +183,21 @@ export class BotOrchestratorService {
       return
     }
 
-    const { projectId, organizationId, senderId, content, fileIds, mentionUserIds } = message as any
+    const { projectId, organizationId, senderId, content, fileIds, mentionUserIds, linkedTaskId } =
+      message as any
 
-    // Find Bot User — search by email pattern (isBot field available after Prisma regen)
-    const botUser = await pmClient.user.findFirst({
-      where: { email: { contains: 'bot+' } }
-    })
-    const botUserId = botUser?.id || 'BOT_USER'
+    // Bug 1 Fix: Strictly org-scoped bot user ID lookup (never fall back to literal 'BOT_USER')
+    const botUserId = await this.getBotUserIdForOrg(organizationId)
+
+    // Bug 2 Fix: If this message already created a task, skip task creation to guarantee idempotency on retries
+    if (linkedTaskId) {
+      console.log(
+        `[BotOrchestrator] Message ${chatMessageId} already linked to task ${linkedTaskId}. Skipping creation.`
+      )
+      if (message.status === ChatMessageStatus.COMPLETED) {
+        return
+      }
+    }
 
     try {
       await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.PROCESSING as any)
@@ -201,7 +243,7 @@ export class BotOrchestratorService {
       // Deterministic parsing (slash commands + lead keyword)
       const plainText = this.htmlToPlainText(content)
       const commandType = this.extractSlashCommand(plainText)
-      const candidateUserIds = ((mentionUserIds as string[]) || []).filter(uid => uid !== botUserId)
+      const candidateUserIds = ((mentionUserIds as string[]) || []).filter((uid) => uid !== botUserId)
 
       const { leadId, assigneeIds } = this.extractLeadId({
         htmlContent: content,
@@ -210,12 +252,37 @@ export class BotOrchestratorService {
         members: Array.from(memberMap.values())
       })
 
-      // Gemini structured extraction
-      const aiResult = await parseTaskWithGemini({
-        rawText: plainText,
-        commandHint: commandType as any,
-        memberNames
-      })
+      // Gemini structured extraction (Bug 3: resilient retry in client)
+      let aiResult: any
+      try {
+        aiResult = await parseTaskWithGemini({
+          rawText: plainText,
+          commandHint: commandType as any,
+          memberNames
+        })
+      } catch (aiErr: any) {
+        console.error('[BotOrchestrator] AI parsing failed after retries:', aiErr?.message)
+        // Bug 3: Post friendly failure reply instead of leaving message in PENDING
+        const failureReply = await this.chatRepo.createMessage({
+          organizationId,
+          projectId,
+          senderId: botUserId,
+          content: `<p>⚠️ <strong>AI Assistant Temporary Error:</strong> Unable to parse message (${aiErr?.message || 'service busy'}). Please try resending your command.</p>`,
+          mentionUserIds: [senderId],
+          fileIds: [],
+          commandType: (commandType || ChatCommandType.GENERAL) as any,
+          status: ChatMessageStatus.FAILED as any,
+          linkedTaskId: null,
+          errorMessage: aiErr?.message || 'AI parsing error',
+          isBotReply: true
+        })
+
+        pusherTrigger('team-collab', `chat-message-${projectId}`, failureReply)
+        await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.FAILED as any, {
+          errorMessage: aiErr?.message || 'AI parsing error'
+        })
+        return
+      }
 
       await this.aiUsageRepo.logUsage({
         organizationId,
@@ -313,44 +380,60 @@ export class BotOrchestratorService {
         const effectiveAssignees = assigneeIds.length > 0 ? assigneeIds : [senderId]
         const effectiveLeadId = leadId || effectiveAssignees[0]
 
-        const createdTask = await this.taskCreateService.createNewTask({
-          uid: senderId,
-          body: {
-            id: undefined as any,
-            title: aiResult.title,
-            desc: aiResult.rephrased_description,
-            type: taskType,
-            projectId,
-            assigneeIds: effectiveAssignees,
-            leadId: effectiveLeadId,
-            fileIds: fileIds || [],
-            priority: TaskPriority.NORMAL,
-            createdVia: 'BOT' as any,
-            order: 0,
-            dueDate: null,
-            cover: null,
-            startDate: null,
-            plannedStartDate: null,
-            plannedDueDate: null,
-            visionId: null,
-            taskStatusId: null,
-            tagIds: [],
-            parentTaskId: null,
-            progress: 0,
-            done: false,
-            taskPoint: null,
-            customFields: {},
-            checklistDone: 0,
-            checklistTodos: 0,
-            createdBy: senderId,
-            createdAt: new Date(),
-            updatedBy: null,
-            updatedAt: null
-          } as any
-        })
+        let createdTaskId = linkedTaskId
+        let createdTaskTitle = aiResult.title
+
+        // Bug 2 Fix: Only create task if not already created
+        if (!createdTaskId) {
+          const createdTask = await this.taskCreateService.createNewTask({
+            uid: senderId,
+            body: {
+              id: undefined as any,
+              title: aiResult.title,
+              desc: aiResult.rephrased_description,
+              type: taskType,
+              projectId,
+              assigneeIds: effectiveAssignees,
+              leadId: effectiveLeadId,
+              fileIds: fileIds || [],
+              priority: TaskPriority.NORMAL,
+              createdVia: 'BOT' as any,
+              order: 0,
+              dueDate: null,
+              cover: null,
+              startDate: null,
+              plannedStartDate: null,
+              plannedDueDate: null,
+              visionId: null,
+              taskStatusId: null,
+              tagIds: [],
+              parentTaskId: null,
+              progress: 0,
+              done: false,
+              taskPoint: null,
+              customFields: {},
+              checklistDone: 0,
+              checklistTodos: 0,
+              createdBy: senderId,
+              createdAt: new Date(),
+              updatedBy: null,
+              updatedAt: null
+            } as any
+          })
+          createdTaskId = createdTask.id
+          createdTaskTitle = createdTask.title
+
+          // Immediately update linkedTaskId and status to prevent double creation on downstream error retry
+          await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.COMPLETED as any, {
+            linkedTaskId: createdTaskId,
+            commandType: (taskType === TaskType.BUG ? ChatCommandType.BUG : ChatCommandType.TASK) as any
+          })
+        }
 
         const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Technewity CRM'
-        const taskUrl = genFrontendUrl(`${project?.organizationId}/project/${projectId}?mode=task&taskId=${createdTask.id}`)
+        const taskUrl = genFrontendUrl(
+          `${project?.organizationId}/project/${projectId}?mode=task&taskId=${createdTaskId}`
+        )
 
         // In-app notifications for all assigned members + lead
         const notifyTargetUserIds = Array.from(new Set([...effectiveAssignees, effectiveLeadId]))
@@ -361,7 +444,7 @@ export class BotOrchestratorService {
             organizationId,
             userId: targetUid,
             type: 'TASK_ASSIGNED',
-            title: `Assigned to ${taskType}: "${createdTask.title}"`,
+            title: `Assigned to ${taskType}: "${createdTaskTitle}"`,
             body: aiResult.rephrased_description.slice(0, 150),
             link: taskUrl
           })
@@ -370,10 +453,10 @@ export class BotOrchestratorService {
           if (targetMember?.email) {
             await sendEmail({
               emails: [targetMember.email],
-              subject: `[${appName}] New ${taskType} Assigned: "${createdTask.title}"`,
+              subject: `[${appName}] New ${taskType} Assigned: "${createdTaskTitle}"`,
               html: `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
                 <h2>You were assigned a new ${taskType.toLowerCase()} by AI Bot</h2>
-                <p><strong>Title:</strong> ${createdTask.title}</p>
+                <p><strong>Title:</strong> ${createdTaskTitle}</p>
                 <p><strong>Description:</strong> ${aiResult.rephrased_description}</p>
                 <p><a href="${taskUrl}" style="background-color: #4f46e5; color: white; padding: 10px 18px; text-decoration: none; border-radius: 4px; display: inline-block;">View Task</a></p>
               </div>`
@@ -382,30 +465,28 @@ export class BotOrchestratorService {
         }
 
         const leadMember = memberMap.get(effectiveLeadId)
-        const assigneeNames = effectiveAssignees.map((id: string) => memberMap.get(id)?.name || id).join(', ')
+        const assigneeNames = effectiveAssignees
+          .map((id: string) => memberMap.get(id)?.name || id)
+          .join(', ')
 
         const botReply = await this.chatRepo.createMessage({
           organizationId,
           projectId,
           senderId: botUserId,
           content: `<p>✨ <strong>${taskType === 'BUG' ? 'Bug' : 'Task'} Created!</strong></p>
-          <p><strong>Title:</strong> ${createdTask.title}</p>
+          <p><strong>Title:</strong> ${createdTaskTitle}</p>
           <p>${aiResult.rephrased_description}</p>
           <p>👤 <strong>Lead:</strong> ${leadMember?.name || 'Unassigned'} | 👥 <strong>Assignees:</strong> ${assigneeNames}</p>`,
           mentionUserIds: [senderId, ...notifyTargetUserIds],
           fileIds: fileIds || [],
           commandType: (taskType === TaskType.BUG ? ChatCommandType.BUG : ChatCommandType.TASK) as any,
           status: ChatMessageStatus.COMPLETED as any,
-          linkedTaskId: createdTask.id,
+          linkedTaskId: createdTaskId,
           errorMessage: null,
           isBotReply: true
         })
 
         pusherTrigger('team-collab', `chat-message-${projectId}`, botReply)
-        await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.COMPLETED as any, {
-          linkedTaskId: createdTask.id,
-          commandType: (taskType === TaskType.BUG ? ChatCommandType.BUG : ChatCommandType.TASK) as any
-        })
         return
       }
 
@@ -426,7 +507,6 @@ export class BotOrchestratorService {
 
       pusherTrigger('team-collab', `chat-message-${projectId}`, unclearReply)
       await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.COMPLETED as any)
-
     } catch (error: any) {
       console.error('[BotOrchestrator Error]', error)
       const errorMsg = error?.message || 'An unexpected error occurred.'
@@ -435,21 +515,25 @@ export class BotOrchestratorService {
         errorMessage: errorMsg
       })
 
-      const botErrorReply = await this.chatRepo.createMessage({
-        organizationId,
-        projectId,
-        senderId: botUserId,
-        content: `<p>❌ <strong>Error:</strong> ${errorMsg}</p>`,
-        mentionUserIds: [senderId],
-        fileIds: [],
-        commandType: ChatCommandType.GENERAL as any,
-        status: ChatMessageStatus.FAILED as any,
-        linkedTaskId: null,
-        errorMessage: errorMsg,
-        isBotReply: true
-      })
+      try {
+        const botErrorReply = await this.chatRepo.createMessage({
+          organizationId,
+          projectId,
+          senderId: botUserId,
+          content: `<p>❌ <strong>Error:</strong> ${errorMsg}</p>`,
+          mentionUserIds: [senderId],
+          fileIds: [],
+          commandType: ChatCommandType.GENERAL as any,
+          status: ChatMessageStatus.FAILED as any,
+          linkedTaskId: null,
+          errorMessage: errorMsg,
+          isBotReply: true
+        })
 
-      pusherTrigger('team-collab', `chat-message-${projectId}`, botErrorReply)
+        pusherTrigger('team-collab', `chat-message-${projectId}`, botErrorReply)
+      } catch (replyErr) {
+        console.error('[BotOrchestrator Fatal Reply Error]', replyErr)
+      }
     }
   }
 }

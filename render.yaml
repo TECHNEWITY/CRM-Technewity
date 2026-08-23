@@ -49,7 +49,7 @@ services:
   - key: AI_PROVIDER
     value: gemini
   - key: AI_MODEL
-    value: gemini-3.7-flash
+    value: gemini-2.5-flash
   - key: GEMINI_API_KEY
     sync: false
   - key: AI_API_KEY
@@ -96,7 +96,7 @@ services:
   - key: AI_PROVIDER
     value: gemini
   - key: AI_MODEL
-    value: gemini-3.7-flash
+    value: gemini-2.5-flash
   - key: GEMINI_API_KEY
     sync: false
   region: singapore

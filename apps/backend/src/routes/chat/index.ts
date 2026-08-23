@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { ChatCommandType, ChatMessageStatus } from '@prisma/client'
-import { ChatRepository, pmClient } from '@database'
+import { ChatRepository, ensureBotUserForOrg, pmClient } from '@database'
 import { authMiddleware, beProjectMemberMiddleware } from '../../middlewares'
 import { AuthRequest } from '../../types'
 import { pusherTrigger } from '../../lib/pusher-server'
@@ -52,10 +52,8 @@ router.post('/project/:projectId/chat/message', [authMiddleware, beProjectMember
     const htmlMentionIds = extractMentionIdsFromHtml(content)
     const combinedMentionIds = Array.from(new Set([...(mentionUserIds || []), ...htmlMentionIds]))
 
-    // Find Bot User for this organization
-    const botUser = await pmClient.user.findFirst({
-      where: { isBot: true }
-    })
+    // Find Bot User for this organization (org-scoped)
+    const botUser = orgId ? await ensureBotUserForOrg(orgId) : null
     const botUserId = botUser?.id
 
     // Check if bot should be triggered:

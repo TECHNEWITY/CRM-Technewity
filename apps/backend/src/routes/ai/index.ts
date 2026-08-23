@@ -34,7 +34,10 @@ router.post('/ai/rephrase', [authMiddleware], async (req: AuthRequest, res) => {
     })
   } catch (error: any) {
     console.error('[AI Rephrase API Error]', error)
-    return res.status(500).json({ status: 500, error: error?.message || 'Failed to rephrase text' })
+    return res.status(503).json({
+      status: 503,
+      error: 'AI is temporarily unavailable, please try again shortly.'
+    })
   }
 })
 

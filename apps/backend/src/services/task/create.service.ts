@@ -73,7 +73,7 @@ export default class TaskCreateService {
           desc,
           done,
           customFields: {},
-          fileIds: [],
+          fileIds: (body as any).fileIds || [],
           projectId,
           priority,
           taskStatusId: taskStatusId,
