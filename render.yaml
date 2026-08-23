@@ -57,7 +57,7 @@ services:
   - key: BOT_RATE_LIMIT_PER_USER_PER_DAY
     value: '50'
   region: singapore
-  buildCommand: yarn install; yarn generate2; yarn build:be
+  buildCommand: yarn install --ignore-scripts; yarn generate2; yarn build:be
   startCommand: yarn prod:be
   healthCheckPath: /
 
@@ -81,7 +81,7 @@ services:
   - key: NEXT_PUBLIC_FIREBASE_CLIENT_CONFIG
     value: '{"apiKey":"AIzaSyB-9yDd2yoYFXghyIhcMpKXp1V3SUhiMKg","authDomain":"crm-technewity.firebaseapp.com","projectId":"crm-technewity","storageBucket":"crm-technewity.firebasestorage.app","messagingSenderId":"488443304417","appId":"1:488443304417:web:37a370184313de3e599aa0","measurementId":"G-YLEBRVY61N"}'
   region: singapore
-  buildCommand: yarn install; yarn generate2; yarn build:fe
+  buildCommand: yarn install --ignore-scripts; yarn generate2; yarn build:fe
   startCommand: npx next start ./dist/apps/frontend/ -p $PORT
 
 - type: worker
@@ -100,5 +100,5 @@ services:
   - key: GEMINI_API_KEY
     sync: false
   region: singapore
-  buildCommand: yarn install; yarn generate2; yarn build:se
+  buildCommand: yarn install --ignore-scripts; yarn generate2; yarn build:se
   startCommand: yarn prod:se
