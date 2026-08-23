@@ -455,6 +455,21 @@ export class BotOrchestratorService {
         // Default dueDate (+7 days from now) so task is visible in default "This month" board views
         const defaultDueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 
+        // Ensure assignees/lead are registered as project members
+        for (const uid of effectiveAssignees) {
+          if (isValidId(uid) && isValidId(projectId) && !projectMembers.some((pm: any) => pm.uid === uid)) {
+            await pmClient.members.create({
+              data: {
+                projectId,
+                uid,
+                role: 'MEMBER' as any,
+                createdAt: new Date(),
+                createdBy: senderId
+              }
+            }).catch(() => null)
+          }
+        }
+
         // Only create task if not already created
         if (!createdTaskId) {
           const createdTask = await this.taskCreateService.createNewTask({
