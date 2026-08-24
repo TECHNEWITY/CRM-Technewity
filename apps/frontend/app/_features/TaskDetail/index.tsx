@@ -69,7 +69,7 @@ export interface ITaskDefaultValues {
   progress: number
   createdBy?: string | null
   createdVia?: TaskCreatedVia | null
-  createdAt?: Date | string | null
+  createdAt?: Date | null
 }
 interface ITaskFormProps {
   id: string
