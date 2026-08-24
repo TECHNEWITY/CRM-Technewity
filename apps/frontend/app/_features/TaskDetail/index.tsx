@@ -2,7 +2,7 @@ import { Button, DatePicker, Form, Tab, messageWarning } from '@ui-components'
 import MemberPicker from '@/components/MemberPicker'
 import PrioritySelect from '@/components/PrioritySelect'
 import StatusSelect from '@/components/StatusSelect'
-import { TaskPriority, TaskStatus, TaskType } from '@prisma/client'
+import { TaskPriority, TaskStatus, TaskType, TaskCreatedVia } from '@prisma/client'
 import { useFormik } from 'formik'
 import { validateTask } from '@namviek/core/validation'
 import { useParams } from 'next/navigation'
@@ -68,7 +68,7 @@ export interface ITaskDefaultValues {
   desc: string
   progress: number
   createdBy?: string | null
-  createdVia?: string | null
+  createdVia?: TaskCreatedVia | null
   createdAt?: Date | string | null
 }
 interface ITaskFormProps {
