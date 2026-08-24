@@ -66,6 +66,23 @@ export class BotOrchestratorService {
   }
 
   /**
+   * Updates message status in DB and immediately pushes the updated message via Pusher
+   * so the frontend removes the 'Still working on it...' spinner in real-time without page refresh.
+   */
+  public async updateAndPushMessageStatus(
+    projectId: string,
+    chatMessageId: string,
+    status: ChatMessageStatus,
+    extra?: { linkedTaskId?: string; errorMessage?: string; commandType?: any }
+  ) {
+    const updated = await this.chatRepo.updateMessageStatus(chatMessageId, status as any, extra)
+    if (updated && projectId) {
+      pusherTrigger('team-collab', `chat-message-${projectId}`, updated)
+    }
+    return updated
+  }
+
+  /**
    * Extract explicit slash commands from text (/Task, /Bug, /Feature, /Improvement, /Report, /Schedule, /Email).
    */
   public extractSlashCommand(text: string): TBotIntent | null {
@@ -326,12 +343,12 @@ export class BotOrchestratorService {
       console.log(
         `[BotOrchestrator] Message ${chatMessageId} already linked to task ${linkedTaskId}. Skipping creation.`
       )
-      await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.COMPLETED as any)
+      await this.updateAndPushMessageStatus(projectId, chatMessageId, ChatMessageStatus.COMPLETED as any)
       return
     }
 
     try {
-      await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.PROCESSING as any)
+      await this.updateAndPushMessageStatus(projectId, chatMessageId, ChatMessageStatus.PROCESSING as any)
 
       // Daily rate limit guard
       const isAllowed = await this.checkRateLimit(senderId)
@@ -351,7 +368,7 @@ export class BotOrchestratorService {
         })
 
         pusherTrigger('team-collab', `chat-message-${projectId}`, limitReply)
-        await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.COMPLETED as any)
+        await this.updateAndPushMessageStatus(projectId, chatMessageId, ChatMessageStatus.COMPLETED as any)
         return
       }
 
@@ -425,7 +442,7 @@ export class BotOrchestratorService {
         })
 
         pusherTrigger('team-collab', `chat-message-${projectId}`, clarificationReply)
-        await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.COMPLETED as any)
+        await this.updateAndPushMessageStatus(projectId, chatMessageId, ChatMessageStatus.COMPLETED as any)
         return
       }
 
@@ -478,7 +495,7 @@ export class BotOrchestratorService {
         })
 
         pusherTrigger('team-collab', `chat-message-${projectId}`, failureReply)
-        await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.FAILED as any, {
+        await this.updateAndPushMessageStatus(projectId, chatMessageId, ChatMessageStatus.FAILED as any, {
           errorMessage: aiErr?.message || 'AI parsing error'
         })
         return
@@ -610,12 +627,12 @@ export class BotOrchestratorService {
       })
 
       pusherTrigger('team-collab', `chat-message-${projectId}`, unclearReply)
-      await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.COMPLETED as any)
+      await this.updateAndPushMessageStatus(projectId, chatMessageId, ChatMessageStatus.COMPLETED as any)
     } catch (error: any) {
       console.error('[BotOrchestrator Error]', error)
       const errorMsg = error?.message || 'An unexpected error occurred.'
 
-      await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.FAILED as any, {
+      await this.updateAndPushMessageStatus(projectId, chatMessageId, ChatMessageStatus.FAILED as any, {
         errorMessage: errorMsg
       })
 
@@ -766,7 +783,7 @@ export class BotOrchestratorService {
       }
     }
 
-    await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.COMPLETED as any, {
+    await this.updateAndPushMessageStatus(projectId, chatMessageId, ChatMessageStatus.COMPLETED as any, {
       linkedTaskId: createdTaskId,
       commandType: commandPrismaType as any
     })
@@ -963,7 +980,7 @@ export class BotOrchestratorService {
     })
 
     pusherTrigger('team-collab', `chat-message-${projectId}`, botReply)
-    await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.COMPLETED as any)
+    await this.updateAndPushMessageStatus(projectId, chatMessageId, ChatMessageStatus.COMPLETED as any)
   }
 
   /**
@@ -1077,7 +1094,7 @@ export class BotOrchestratorService {
     })
 
     pusherTrigger('team-collab', `chat-message-${projectId}`, botReply)
-    await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.COMPLETED as any)
+    await this.updateAndPushMessageStatus(projectId, chatMessageId, ChatMessageStatus.COMPLETED as any)
   }
 
   /**
@@ -1188,7 +1205,7 @@ export class BotOrchestratorService {
     })
 
     pusherTrigger('team-collab', `chat-message-${projectId}`, botReply)
-    await this.chatRepo.updateMessageStatus(chatMessageId, ChatMessageStatus.COMPLETED as any, {
+    await this.updateAndPushMessageStatus(projectId, chatMessageId, ChatMessageStatus.COMPLETED as any, {
       commandType: ChatCommandType.EMAIL as any
     })
   }

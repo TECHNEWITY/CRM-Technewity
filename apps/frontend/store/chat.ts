@@ -30,6 +30,9 @@ export const useChatStore = create<IChatStore>((set, get) => ({
       const res = await chatGetMessages(projectId, { limit: 100 })
       const data = res.data?.data || []
       set({ messages: data, isLoading: false })
+      if (typeof window !== 'undefined' && data.some((m: any) => m.linkedTaskId)) {
+        window.dispatchEvent(new CustomEvent('crm-sync-tasks'))
+      }
     } catch (error) {
       console.error('[Chat Store] Failed to load messages:', error)
       set({ isLoading: false })
@@ -79,5 +82,10 @@ export const useChatStore = create<IChatStore>((set, get) => ({
         return { messages: [...state.messages, msg] }
       }
     })
+
+    // If message is linked to a task or is a bot completion reply, trigger board task sync
+    if (typeof window !== 'undefined' && (msg.linkedTaskId || (msg as any).isBotReply)) {
+      window.dispatchEvent(new CustomEvent('crm-sync-tasks'))
+    }
   }
 }))

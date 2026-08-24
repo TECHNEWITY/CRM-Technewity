@@ -267,7 +267,7 @@ export default function ChatMessageInput({
   return (
     <DropFileZone
       onChange={handleFilesDropped}
-      className="p-3 border-t bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 transition-colors"
+      className="p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 transition-colors"
     >
       {/* Hidden File Input for Paperclip click */}
       <input
@@ -295,8 +295,8 @@ export default function ChatMessageInput({
           </button>
         </div>
 
-        {/* Command Pill Bubbles */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin">
+        {/* Command Pill Bubbles with clean scroll */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {COMMAND_BUBBLES.map((bubble) => {
             const colorClasses = {
               indigo:
@@ -317,21 +317,18 @@ export default function ChatMessageInput({
                 type="button"
                 title={bubble.hint}
                 onClick={() => handleInsertCommand(bubble.command)}
-                className={`group px-2.5 py-1 rounded-full text-xs font-medium border flex items-center gap-1.5 transition-all shadow-xs shrink-0 active:scale-95 ${colorClasses}`}
+                className={`group px-2.5 py-1 rounded-full text-xs font-medium border flex items-center gap-1.5 transition-all shadow-2xs shrink-0 active:scale-95 touch-manipulation ${colorClasses}`}
               >
                 <span>{bubble.icon}</span>
                 <span className="font-semibold">{bubble.label}</span>
-                <span className="text-[10px] opacity-75 hidden group-hover:inline transition-opacity">
-                  + Add
-                </span>
               </button>
             )
           })}
         </div>
 
-        {/* Collapsible Examples Panel when user clicks 'Show Examples' or on focus */}
-        {(showGuide || isFocused) && (
-          <div className="mt-2 p-2.5 bg-gradient-to-r from-indigo-50/70 via-purple-50/40 to-slate-50/70 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-slate-900/30 rounded-lg border border-indigo-100 dark:border-indigo-900/40 text-xs animate-in fade-in duration-200">
+        {/* Collapsible Examples Panel only when user clicks 'Show Examples' */}
+        {showGuide && (
+          <div className="mt-2 p-2.5 bg-gradient-to-r from-indigo-50/70 via-purple-50/40 to-slate-50/70 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-slate-900/30 rounded-lg border border-indigo-100 dark:border-indigo-900/40 text-xs animate-in fade-in duration-200 max-h-48 overflow-y-auto">
             <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1">
               <HiSparkles className="w-3.5 h-3.5 text-indigo-500" />
               <span>Click an example prompt to insert directly:</span>
@@ -342,7 +339,7 @@ export default function ChatMessageInput({
                   key={b.id}
                   type="button"
                   onClick={() => handleInsertTemplate(b.template!)}
-                  className="text-left px-2 py-1 rounded bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 border border-gray-200/60 dark:border-gray-700/60 text-gray-700 dark:text-gray-300 font-mono text-[11px] truncate transition-colors shadow-2xs hover:border-indigo-300"
+                  className="text-left px-2 py-1 rounded bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 border border-gray-200/60 dark:border-gray-700/60 text-gray-700 dark:text-gray-300 font-mono text-[11px] truncate transition-colors shadow-2xs hover:border-indigo-300 active:scale-98"
                 >
                   <span className="mr-1">{b.icon}</span>
                   <span>{b.template}</span>

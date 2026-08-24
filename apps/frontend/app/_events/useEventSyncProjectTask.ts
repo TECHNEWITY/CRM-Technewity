@@ -65,8 +65,8 @@ export const useEventSyncProjectTask = (projectId: string) => {
           }
 
           createLocalTask(taskData)
+          fetchNCache()
           return
-
         }
 
         if (type === 'delete') {
@@ -81,8 +81,14 @@ export const useEventSyncProjectTask = (projectId: string) => {
         }
       })
 
+    const handleCustomSync = () => {
+      fetchNCache()
+    }
+    window.addEventListener('crm-sync-tasks', handleCustomSync)
+
     return () => {
       channelTeamCollab && channelTeamCollab.unbind(eventUpdateName)
+      window.removeEventListener('crm-sync-tasks', handleCustomSync)
     }
-  }, [channelTeamCollab, user])
+  }, [channelTeamCollab, user, projectId])
 }
