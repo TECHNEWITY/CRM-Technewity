@@ -11,7 +11,7 @@ import { StatusType } from '@prisma/client'
 
 import TaskTypeIcon from '@/components/TaskTypeSelect/Icon'
 import TaskDate from '../views/TaskDate'
-import { HiOutlineCalendar } from 'react-icons/hi2'
+import { HiOutlineCalendar, HiOutlineSparkles } from 'react-icons/hi2'
 import TaskAssignee from '../views/TaskAssignee'
 import TaskCheckbox from '@/components/TaskCheckbox'
 import TaskActions from '@/features/TaskActions'
@@ -20,6 +20,7 @@ import TaskChecklist from '@/features/TaskChecklist'
 import { useMemo } from 'react'
 import { pushState } from 'apps/frontend/libs/pushState'
 import TimerButton from '@/features/TimeTracker/TimerButton'
+import MemberAvatar from '@/components/MemberAvatar'
 
 function BoardItemCover({ cover }: { cover: string | null }) {
   if (!cover) return null
@@ -119,7 +120,24 @@ export default function BoardItem({ data }: { data: ExtendedTask }) {
             uids={data.assigneeIds}
           />
         </div>
-        <TaskCheckbox id={data.id} selected={data.selected} />
+        <div className="flex items-center gap-1.5">
+          {/* Creator badge — visible to all team members */}
+          {(data as any).createdVia === 'BOT' ? (
+            <Tooltip title={`Created via AI Bot`}>
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
+                <HiOutlineSparkles className="w-3 h-3" />
+                Bot
+              </span>
+            </Tooltip>
+          ) : (data as any).createdBy ? (
+            <Tooltip title={`Created manually`}>
+              <div className="shrink-0">
+                <MemberAvatar uid={(data as any).createdBy} size="sm" noName={true} />
+              </div>
+            </Tooltip>
+          ) : null}
+          <TaskCheckbox id={data.id} selected={data.selected} />
+        </div>
       </div>
       {progress ? (
         <div className="absolute bottom-0 left-0 w-full rounded-b-md overflow-hidden">

@@ -44,6 +44,9 @@ export interface ITaskDefaultValues {
   planedStartDate: Date
   desc: string
   progress: number
+  createdBy?: string | null
+  createdVia?: string | null
+  createdAt?: Date | string | null
 }
 interface ITaskFormProps {
   isUpdate?: boolean

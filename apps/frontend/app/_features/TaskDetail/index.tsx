@@ -19,7 +19,8 @@ import {
   HiOutlineMap,
   HiOutlinePaperClip,
   HiOutlineSquare2Stack,
-  HiOutlineUser
+  HiOutlineUser,
+  HiOutlineSparkles
 } from 'react-icons/hi2'
 import './style.css'
 import TaskCover from './TaskCover'
@@ -33,6 +34,8 @@ import TimeTracker from '@/features/TimeTracker'
 import TimerHistory from '../TimeTracker/TimerHistory'
 import TimerButton from '../TimeTracker/TimerButton'
 import TaskDeleteAction from '../TaskActions/TaskDeleteAction'
+import MemberAvatar from '@/components/MemberAvatar'
+import { formatDistanceToNow } from 'date-fns'
 
 export const defaultFormikValues: ITaskDefaultValues = {
   title: '',
@@ -64,6 +67,9 @@ export interface ITaskDefaultValues {
   planedStartDate: Date
   desc: string
   progress: number
+  createdBy?: string | null
+  createdVia?: string | null
+  createdAt?: Date | string | null
 }
 interface ITaskFormProps {
   id: string
@@ -227,6 +233,34 @@ export default function TaskDetail({
               />
             </div>
           </div>
+          {/* Created by — shows who created the task and via which method */}
+          {defaultValue?.createdBy && (
+            <div className="task-info-item">
+              <div className="task-info-label">
+                <HiOutlineUser /> <span>Created by</span>
+              </div>
+              <div className="task-info-content">
+                <div className="flex items-center gap-2">
+                  <MemberAvatar uid={defaultValue.createdBy} size="sm" noName={false} />
+                  {defaultValue.createdVia === 'BOT' ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                      <HiOutlineSparkles className="w-3 h-3" />
+                      via AI Bot
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
+                      ✍️ Manually
+                    </span>
+                  )}
+                  {defaultValue.createdAt && (
+                    <span className="text-[11px] text-gray-400">
+                      {formatDistanceToNow(new Date(defaultValue.createdAt), { addSuffix: true })}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           <div className="task-info-item">
             <div className="task-info-label">
               <HiOutlineSquare2Stack /> <span>Status</span>

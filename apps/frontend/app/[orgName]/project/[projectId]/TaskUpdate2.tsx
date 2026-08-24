@@ -175,7 +175,10 @@ export const TaskUpdate2 = () => {
         desc: currentTask.desc ? currentTask.desc : defaultFormikValues.desc,
         progress: currentTask.progress
           ? currentTask.progress
-          : defaultFormikValues.progress
+          : defaultFormikValues.progress,
+        createdBy: (currentTask as any).createdBy || null,
+        createdVia: (currentTask as any).createdVia || null,
+        createdAt: currentTask.createdAt ? new Date(currentTask.createdAt) : null
       })
     }
   }, [taskId, tasks])

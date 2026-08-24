@@ -33,7 +33,11 @@ export const useEventSyncProjectTask = (projectId: string) => {
       }) => {
         const { triggerBy, data: taskData, type } = data
 
-        if (triggerBy === user.id) return
+        // Skip self-triggered events ONLY for manually created tasks.
+        // Bot-created tasks use the sender's uid as triggerBy, so we must NOT
+        // skip them — otherwise the board never updates without a page refresh.
+        const isBotCreated = (taskData as any)?.createdVia === 'BOT'
+        if (triggerBy === user.id && !isBotCreated) return
 
         console.log('data', taskData)
         if (type === 'update' && taskData) {

@@ -10,13 +10,15 @@ import TaskDate from './TaskDate'
 import ProgressBar from '@/components/ProgressBar'
 import { useParams, useRouter } from 'next/navigation'
 import { useUrl } from '@/hooks/useUrl'
-import { Loading, messageWarning } from '@ui-components'
+import { Loading, Tooltip, messageWarning } from '@ui-components'
 
 import TaskTypeCell from './TaskTypeCell'
 import TaskChecklist from '@/features/TaskChecklist'
 import TaskProgress from './TaskProgress'
 import { useMemo } from 'react'
 import TaskTitle from './TaskTitle'
+import MemberAvatar from '@/components/MemberAvatar'
+import { HiOutlineSparkles } from 'react-icons/hi2'
 
 export default function ListRow({ task }: { task: ExtendedTask }) {
   const isRandomId = task.id.includes('TASK-ID-RAND')
@@ -70,6 +72,23 @@ export default function ListRow({ task }: { task: ExtendedTask }) {
         </ListCell>
         <ListCell className="hidden sm:block" width={70}>
           <TaskProgress progress={progress} taskId={task.id} />
+        </ListCell>
+        {/* Creator badge — visible to all team members */}
+        <ListCell className="hidden sm:flex items-center" width={60}>
+          {(task as any).createdVia === 'BOT' ? (
+            <Tooltip title="Created via AI Bot">
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
+                <HiOutlineSparkles className="w-3 h-3" />
+                Bot
+              </span>
+            </Tooltip>
+          ) : (task as any).createdBy ? (
+            <Tooltip title="Created manually">
+              <div className="shrink-0">
+                <MemberAvatar uid={(task as any).createdBy} size="sm" noName={true} />
+              </div>
+            </Tooltip>
+          ) : null}
         </ListCell>
       </div>
     </div>
