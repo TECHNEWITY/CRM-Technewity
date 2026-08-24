@@ -14,10 +14,14 @@ export abstract class BaseQueue {
   }
 
   run() {
-    this.jobMapping()
-    this.registerQueue()
-    this.registerWorkerRunJobs()
-    this.watchJobs()
+    try {
+      this.jobMapping()
+      this.registerQueue()
+      this.registerWorkerRunJobs()
+      this.watchJobs()
+    } catch (err: any) {
+      console.warn(`[Queue:${this.queueName}] Failed to initialize queue/worker:`, err?.message || err)
+    }
   }
 
   jobMapping() {
@@ -35,6 +39,9 @@ export abstract class BaseQueue {
   registerQueue() {
     this.queue = new Queue(this.queueName, {
       connection: redis
+    })
+    this.queue.on('error', err => {
+      console.warn(`[BullMQ:Queue:${this.queueName}] Connection error:`, err.message)
     })
   }
 
@@ -58,10 +65,16 @@ export abstract class BaseQueue {
       },
       { connection: redis }
     )
+
+    this.worker.on('error', err => {
+      console.warn(`[BullMQ:Worker:${this.queueName}] Connection error:`, err.message)
+    })
   }
 
   watchJobs() {
     const worker = this.worker
+    if (!worker) return
+
     worker.on('completed', job => {
       console.log(`${job.id} has completed!`)
     })

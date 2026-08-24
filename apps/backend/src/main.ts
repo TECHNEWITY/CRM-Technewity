@@ -12,11 +12,24 @@ import { checkHealthRoute } from './checkhealth'
 import { runScheduler } from "@task-runner";
 import { getBotQueueInstance } from './queues/Bot'
 
-runScheduler()
-getBotQueueInstance()
+process.on('unhandledRejection', (reason: any) => {
+  console.warn('[Unhandled Rejection Caught]:', reason?.message || reason)
+})
+
+try {
+  runScheduler()
+} catch (err: any) {
+  console.warn('[Scheduler] Startup error:', err?.message || err)
+}
+
+try {
+  getBotQueueInstance()
+} catch (err: any) {
+  console.warn('[BotQueue] Startup error:', err?.message || err)
+}
 
 connectPubClient((err) => {
-  console.log(err)
+  if (err) console.warn('[PubClient Error]: Connection failed')
 })
 const app: Application = express()
 
